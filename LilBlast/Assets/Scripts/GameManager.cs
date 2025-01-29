@@ -7,6 +7,7 @@ using DG.Tweening; //dotween
 using System;  // ArgumentOutOfRangeException 
 using Random = UnityEngine.Random; // Random.value
 using Unity.VisualScripting;
+using TreeEditor;
 
 public class GameManager : MonoBehaviour
 {
@@ -17,8 +18,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Block _blockPrefab;
 
     [SerializeField] private SpriteRenderer _boardPrefab;
-    //[SerializeField] private List<BlockType> _types;
-    [SerializeField] private float _travelTime = 0.2f;
+    [SerializeField] private Block[] blockTypes= new Block[5];
 
     private List<Node> _nodes;
     private List<Block> _blocks;
@@ -44,10 +44,11 @@ public class GameManager : MonoBehaviour
             }
         }
         var center = new Vector2((float)_width / 2 - 0.5f, (float)_height / 2 - 0.5f);
+
         var board = Instantiate(_boardPrefab, center, Quaternion.identity);
         board.size = new Vector2(_width, _height);
-        Camera.main.transform.position = new Vector3(center.x, center.y, -10);
 
+        Camera.main.transform.position = new Vector3(center.x, center.y, -10);
         ChangeState(GameState.SpawningBlocks);
     }
 
@@ -62,7 +63,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.SpawningBlocks:
-                //SpawnBlocks();
+                SpawnBlocks();
                 break;
 
             case GameState.WaitingInput:
@@ -88,7 +89,16 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
+    private void SpawnBlocks()
+    {
+        foreach (var node in _nodes)
+        {   //O(1)
+            Block randomBlock = blockTypes[Random.Range(0, blockTypes.Length)];
+            var block= Instantiate(randomBlock, node.Pos, Quaternion.identity);
+            block.transform.SetParent(node.transform);
+        }
+        ChangeState(GameState.WaitingInput);
+    }
 
     public enum GameState
     {
