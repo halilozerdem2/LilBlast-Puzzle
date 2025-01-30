@@ -5,4 +5,5 @@ public class Node : MonoBehaviour
     public Block OccupiedBlock;
 
     public Vector2 Pos => transform.position;
+    public Vector2Int gridPosition;
 }
