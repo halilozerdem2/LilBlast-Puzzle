@@ -8,7 +8,6 @@ public class Block : MonoBehaviour
     public bool isBlastable = false;
     public int neighboursCount = 0;
     public int blockType;
-
     public List<Block> neighbours = new List<Block>();
 
     public void SetBlock(Node aNode)
@@ -19,7 +18,7 @@ public class Block : MonoBehaviour
         transform.SetParent(node.transform);
     }
 
-    public void FindNeighbors(List<Node> nodes)
+    public void FindNeighbours(List<Node> nodes)
     {
         neighbours.Clear();
         Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
@@ -30,7 +29,7 @@ public class Block : MonoBehaviour
             if (neighbourNode != null && neighbourNode.OccupiedBlock != null)
             {
                 Block neighbourBlock = neighbourNode.OccupiedBlock;
-                if (neighbourBlock.blockType == this.blockType)
+                if (neighbourBlock.blockType == this.blockType) // Aynı tipte mi kontrol et
                 {
                     neighbours.Add(neighbourBlock);
                 }
@@ -38,7 +37,7 @@ public class Block : MonoBehaviour
         }
 
         neighboursCount = neighbours.Count;
-        this.isBlastable = neighboursCount > 2;
+        isBlastable = neighboursCount > 0;
     }
 
     public HashSet<Block> FloodFill()
@@ -68,6 +67,6 @@ public class Block : MonoBehaviour
 
     private void OnMouseDown()
     {
-        FindObjectOfType<GameManager>().TryBlastBlock(this);
+        GameManager.Instance.TryBlastBlock(this);
     }
 }
