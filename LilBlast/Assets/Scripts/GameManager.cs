@@ -73,7 +73,8 @@ public class GameManager : MonoBehaviour
             case GameState.Blasting:
                 UpdateGrid();
                 break;
-            case GameState.NoMoreMove:
+            case GameState.Deadlock:
+                StartCoroutine(ShuffleBoard());
                 break;
             case GameState.Win:
                 break;
@@ -88,7 +89,6 @@ public class GameManager : MonoBehaviour
     {
         StartCoroutine(SpawnBlocksCoroutine());
     }
-
     private IEnumerator SpawnBlocksCoroutine()
     {
         yield return new WaitForSeconds(0.2f); // Bloklar düştükten sonra 0.2 saniye bekle
@@ -107,21 +107,48 @@ public class GameManager : MonoBehaviour
             freeNodes.Remove(node); // Artık dolu, freeNodes listesinden çıkar
 
             // Animasyonlu düşme efekti
-            randomBlock.transform.DOMove(node.Pos, 0.3f).SetEase(Ease.OutBounce);
+            randomBlock.transform.DOMove(node.Pos, 0.5f).SetEase(Ease.OutBounce);
         }
 
         FindAllNeighbours();
-        ChangeState(GameState.WaitingInput);
+        if (HasValidMoves())
+            ChangeState(GameState.WaitingInput);
+        else
+            ChangeState(GameState.Deadlock);
     }
-
-
 
     private void FindAllNeighbours()
     {
         foreach (var block in _blocks)
         {
-            block.FindNeighbours(_nodes.Values.ToList());
+            if (block != null)
+            {
+                block.FindNeighbours(_nodes.Values.ToList());
+            }
         }
+    }
+
+    private bool HasValidMoves() // Deadlock Tespiti
+    {
+        foreach (var node in _nodes.Values)
+        {
+            if (node.OccupiedBlock == null) continue;
+
+            Block currentBlock = node.OccupiedBlock;
+            Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+            foreach (var dir in directions)
+            {
+                if (_nodes.TryGetValue(node.gridPosition + dir, out Node neighborNode))
+                {
+                    if (neighborNode.OccupiedBlock != null && neighborNode.OccupiedBlock.blockType == currentBlock.blockType)
+                    {
+                        return true; // En az bir geçerli hamle var, shuffle yapmaya gerek yok
+                    }
+                }
+            }
+        }
+        return false; // Deadlock durumu var, shuffle yapılmalı
     }
 
     public void TryBlastBlock(Block block)
@@ -139,10 +166,14 @@ public class GameManager : MonoBehaviour
 
                 Destroy(b.gameObject);
             }
+
+            UpdateFreeNodes();
             FindAllNeighbours();
             ChangeState(GameState.Blasting);
         }
+        block.Shake();
     }
+
 
     public void UpdateGrid() // O(n^3) karmaşıklığındaki yapı dicitonary kullanılarak               
     {                        // O(n^2 Log N) seviyesine düşürülecek
@@ -175,6 +206,79 @@ public class GameManager : MonoBehaviour
         SpawnBlocks();
     }
 
+    private IEnumerator ShuffleBoard()
+    {
+        Debug.Log("Shuffling started...");
+
+        List<Block> allBlocks = _blocks.ToList();
+
+        for (int i = 0; i < allBlocks.Count; i++)
+        {
+            int randomIndex = Random.Range(0, allBlocks.Count);
+
+            if (i != randomIndex)
+            {
+                yield return StartCoroutine(SwapBlocksAnimated(allBlocks[i], allBlocks[randomIndex]));
+            }
+        }
+
+        yield return new WaitForSeconds(0.5f); // Swap işlemlerinin bitmesini bekle
+
+        FindAllNeighbours(); // Yeni komşulukları güncelle
+
+        if (!HasValidMoves())
+        {
+            Debug.LogWarning("No valid moves found after shuffle. Retrying...");
+            yield return StartCoroutine(ShuffleBoard()); // Yeniden shuffle et
+        }
+        else
+        {
+            Debug.Log("Shuffle successful!");
+            ChangeState(GameState.WaitingInput);
+        }
+    }
+
+
+    private IEnumerator SwapBlocksAnimated(Block blockA, Block blockB)
+    {
+        if (blockA == null || blockB == null)
+        {
+            Debug.LogWarning("Trying to swap a null block! Skipping swap.");
+            yield break;
+        }
+
+        Vector3 startA = blockA.transform.position;
+        Vector3 startB = blockB.transform.position;
+
+        float duration = 0.3f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            blockA.transform.position = Vector3.Lerp(startA, startB, t);
+            blockB.transform.position = Vector3.Lerp(startB, startA, t);
+
+            yield return null;
+        }
+
+        // Son pozisyonları tam olarak ayarla
+        blockA.transform.position = startB;
+        blockB.transform.position = startA;
+
+        // Blokların bağlı olduğu node'ları değiştir
+        Node tempNode = blockA.node;
+        blockA.SetBlock(blockB.node);
+        blockB.SetBlock(tempNode);
+    }
+
+
+
+
+
+
     private void UpdateFreeNodes()
     {
         freeNodes.Clear();
@@ -187,13 +291,14 @@ public class GameManager : MonoBehaviour
         }
     }
 
+
     public enum GameState
     {
         GenerateLevel,
         SpawningBlocks,
         WaitingInput,
         Blasting,
-        NoMoreMove,
+        Deadlock,
         Win,
         Lose,
         Pause

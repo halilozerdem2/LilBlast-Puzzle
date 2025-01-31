@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System.Collections;
 
 public class Block : MonoBehaviour
 {
@@ -9,6 +10,10 @@ public class Block : MonoBehaviour
     public int neighboursCount = 0;
     public int blockType;
     public List<Block> neighbours = new List<Block>();
+
+    private float shakeDuration = 0.3f;
+    private float shakeMagnitude = 0.1f;
+    Vector2 originalPosition;
 
     public void SetBlock(Node aNode)
     {
@@ -63,6 +68,28 @@ public class Block : MonoBehaviour
         }
 
         return visited;
+    }
+
+    public void Shake()
+    {
+        originalPosition = node.Pos;
+        StartCoroutine(ShakeCoroutine());
+    }
+
+    private IEnumerator ShakeCoroutine()
+    {
+        float elapsedTime = 0f;
+
+        while (elapsedTime < shakeDuration)
+        {
+            float xShake = Random.Range(-shakeMagnitude, shakeMagnitude);
+            float yShake = Random.Range(-shakeMagnitude, shakeMagnitude);
+
+            transform.position = new Vector3(originalPosition.x + xShake, originalPosition.y + yShake);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = originalPosition;
     }
 
     private void OnMouseDown()
