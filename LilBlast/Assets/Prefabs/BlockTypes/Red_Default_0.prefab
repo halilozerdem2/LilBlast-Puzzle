@@ -104,7 +104,7 @@ MonoBehaviour:
   node: {fileID: 0}
   isBlastable: 0
   neighboursCount: 0
-  blockType: 4
+  blockType: 3
   neighbours: []
 --- !u!61 &5686475738345309727
 BoxCollider2D:

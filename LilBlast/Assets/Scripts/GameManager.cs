@@ -20,6 +20,8 @@ public class GameManager : MonoBehaviour
     private List<Block> _blocks;
     private HashSet<Node> freeNodes; // Boş olan düğümleri takip eden liste
 
+    [SerializeField] private GameObject blastEffect;
+
     private GameState _state;
 
     private void Awake()
@@ -163,7 +165,7 @@ public class GameManager : MonoBehaviour
                     b.node.OccupiedBlock = null;
                     freeNodes.Add(b.node); // Boşalan düğümü freeNodes'a ekle
                 }
-
+                ObjectPool.Instance.GetParticleFromPool(b.blockType,b.node.Pos,Quaternion.identity);
                 Destroy(b.gameObject);
             }
 
