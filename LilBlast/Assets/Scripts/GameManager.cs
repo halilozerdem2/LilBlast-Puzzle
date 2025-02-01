@@ -165,8 +165,10 @@ public class GameManager : MonoBehaviour
                     b.node.OccupiedBlock = null;
                     freeNodes.Add(b.node); // Boşalan düğümü freeNodes'a ekle
                 }
-                ObjectPool.Instance.GetParticleFromPool(b.blockType,b.node.Pos,Quaternion.identity);
+                //Instantiate(blastEffect, b.node.Pos, Quaternion.identity);
                 Destroy(b.gameObject);
+                ObjectPool.Instance.GetParticleFromPool(b.blockType, b.node.Pos, Quaternion.identity);
+
             }
 
             UpdateFreeNodes();
@@ -174,6 +176,7 @@ public class GameManager : MonoBehaviour
             ChangeState(GameState.Blasting);
         }
         block.Shake();
+        ObjectPool.Instance.PlaySound(5);
     }
 
 
