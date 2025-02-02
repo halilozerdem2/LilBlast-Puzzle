@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1784286408397178238}
   - component: {fileID: -5895060408168343372}
   - component: {fileID: 3877987389636624116}
+  - component: {fileID: 8529523481839715281}
   m_Layer: 0
   m_Name: Purple_Default_0
   m_TagString: Untagged
@@ -152,3 +153,20 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 2.25, y: 2.56}
   m_EdgeRadius: 0
+--- !u!114 &8529523481839715281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5176069060388159120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68bd1718719514bfd9738ae9b61a3fb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IconTypes:
+  - {fileID: 8161472552560778960, guid: 3716e21c2d6434e1b929462f27c4dd16, type: 3}
+  - {fileID: -6416537123964203564, guid: fcdeb768e25e449b7830303b6369ce77, type: 3}
+  - {fileID: -2693315669398477313, guid: f6515eac95a96471faf24c9cb0f888f6, type: 3}
+  - {fileID: 1386842339749069192, guid: 11c84fea87b8240848bc3bb062198f23, type: 3}

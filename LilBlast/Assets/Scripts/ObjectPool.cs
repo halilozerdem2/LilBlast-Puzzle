@@ -122,4 +122,21 @@ public class ObjectPool : MonoBehaviour
         pool.Enqueue(obj);
     }
 
+    public GameObject GetBlockFromPool(int type, Vector3 position, Quaternion rotation)
+    {
+        if (blockPools.ContainsKey(type) && blockPools[type].Count > 0)
+        {
+            GameObject obj = blockPools[type].Dequeue();
+            obj.transform.position = position;
+            obj.transform.rotation = rotation;
+            obj.SetActive(true);
+            return obj;
+        }
+        else
+        {
+            Debug.LogWarning("Block pool is empty! Consider increasing pool size.");
+            return null;
+        }
+    }
+
 }

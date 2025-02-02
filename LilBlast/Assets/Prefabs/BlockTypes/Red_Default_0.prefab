@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 5626177917788125368}
   - component: {fileID: -5616091948119221040}
   - component: {fileID: 5686475738345309727}
+  - component: {fileID: 4888681432971241400}
   m_Layer: 0
   m_Name: Red_Default_0
   m_TagString: Untagged
@@ -152,3 +153,20 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 2.26, y: 2.56}
   m_EdgeRadius: 0
+--- !u!114 &4888681432971241400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3609787365685268723}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68bd1718719514bfd9738ae9b61a3fb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IconTypes:
+  - {fileID: 887387325851772620, guid: 3ed50cd5521fb4d5789b9a0517275f53, type: 3}
+  - {fileID: 5413993767572339121, guid: 9acca5066336c4ba388565881b23f0a8, type: 3}
+  - {fileID: -8329150480449018202, guid: 00d4500d634d7488f9695ee6a5053f7e, type: 3}
+  - {fileID: -257787592545182917, guid: e1d1bdb3f754a4f45bab28c3aea099b5, type: 3}

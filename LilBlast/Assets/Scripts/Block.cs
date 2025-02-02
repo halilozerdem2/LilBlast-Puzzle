@@ -2,9 +2,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Collections;
+using System;
+using Random = UnityEngine.Random;
 
 public class Block : MonoBehaviour
 {
+    public static event Action<Block> OnBlockSpawned;
+
     public Node node;
     public bool isBlastable = false;
     public int neighboursCount = 0;
@@ -15,6 +19,10 @@ public class Block : MonoBehaviour
     private float shakeMagnitude = 0.1f;
     Vector2 originalPosition;
 
+    private void Start()
+    {
+        OnBlockSpawned?.Invoke(this); // Event tetikleniyor
+    }
     public void SetBlock(Node aNode)
     {
         if (node != null) node.OccupiedBlock = null;
@@ -37,6 +45,7 @@ public class Block : MonoBehaviour
                 if (neighbourBlock.blockType == this.blockType) // Aynı tipte mi kontrol et
                 {
                     neighbours.Add(neighbourBlock);
+                    isBlastable = true;
                 }
             }
         }
@@ -66,9 +75,10 @@ public class Block : MonoBehaviour
                 }
             }
         }
-
         return visited;
     }
+
+   
 
     public void Shake()
     {
@@ -94,6 +104,6 @@ public class Block : MonoBehaviour
 
     private void OnMouseDown()
     {
-        GameManager.Instance.TryBlastBlock(this);
+        BlockManager.Instance.TryBlastBlock(this);
     }
 }
