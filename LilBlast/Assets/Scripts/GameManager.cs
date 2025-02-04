@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using DG.Tweening;
 using System;
 using Random = UnityEngine.Random;
 using System.Collections;
+using UnityEngine.SceneManagement;
+using DG.Tweening;
 
 public class GameManager : MonoBehaviour
 {
@@ -14,21 +15,23 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Node _nodePrefab;
     [SerializeField] private SpriteRenderer _boardPrefab;
 
-    //public List<Block> _blocks;
-
     [SerializeField] private GameObject blastEffect;
+    ShuffleManager shuffle;
 
-    private GameState _state;
+    public GameState _state;
 
     private void Awake()
     {
+        Application.targetFrameRate = 60; // FPS'i 60'a sabitle
+        QualitySettings.vSyncCount = 0;   // VSync'i kapat
+        shuffle = GetComponentInChildren<ShuffleManager>();
+
         Instance = this;
-        //_blocks = new List<Block>();
     }
 
     private void Start()
     {
-        ChangeState(GameState.GenerateLevel);
+        ChangeState(GameState.Play);
     }
 
     public void ChangeState(GameState newState)
@@ -36,7 +39,11 @@ public class GameManager : MonoBehaviour
         _state = newState;
         switch (newState)
         {
-            case GameState.GenerateLevel:
+            case GameState.Menu:
+                //
+                break;
+            case GameState.Play:
+                //SceneManager.LoadScene(1);
                 GridManager.Instance.GenerateGrid();
                 break;
             case GameState.SpawningBlocks:
@@ -49,11 +56,13 @@ public class GameManager : MonoBehaviour
                 GridManager.Instance.UpdateGrid();
                 break;
             case GameState.Deadlock:
-                StartCoroutine(ShuffleBoard());
+                shuffle.HandleShuffle();
                 break;
             case GameState.Win:
+                SceneManager.LoadScene(2);
                 break;
             case GameState.Lose:
+                SceneManager.LoadScene(3);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(newState), newState, null);
@@ -61,78 +70,11 @@ public class GameManager : MonoBehaviour
     }
 
     
-    private IEnumerator ShuffleBoard()
-    {
-        Debug.Log("Shuffling started...");
-
-        List<Block> allBlocks = BlockManager.Instance._blocks.ToList();
-
-        for (int i = 0; i < allBlocks.Count; i++)
-        {
-            int randomIndex = Random.Range(0, allBlocks.Count);
-
-            if (i != randomIndex)
-            {
-                yield return StartCoroutine(SwapBlocksAnimated(allBlocks[i], allBlocks[randomIndex]));
-            }
-        }
-
-        yield return new WaitForSeconds(0.5f); // Swap işlemlerinin bitmesini bekle
-
-        BlockManager.Instance.FindAllNeighbours(); // Yeni komşulukları güncelle
-
-        if (!BlockManager.Instance.HasValidMoves())
-        {
-            Debug.LogWarning("No valid moves found after shuffle. Retrying...");
-            yield return StartCoroutine(ShuffleBoard()); // Yeniden shuffle et
-        }
-        else
-        {
-            Debug.Log("Shuffle successful!");
-            ChangeState(GameState.WaitingInput);
-        }
-    }
-
-
-    private IEnumerator SwapBlocksAnimated(Block blockA, Block blockB)
-    {
-        if (blockA == null || blockB == null)
-        {
-            Debug.LogWarning("Trying to swap a null block! Skipping swap.");
-            yield break;
-        }
-
-        Vector3 startA = blockA.transform.position;
-        Vector3 startB = blockB.transform.position;
-
-        float duration = 0.3f;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-
-            blockA.transform.position = Vector3.Lerp(startA, startB, t);
-            blockB.transform.position = Vector3.Lerp(startB, startA, t);
-
-            yield return null;
-        }
-
-        // Son pozisyonları tam olarak ayarla
-        blockA.transform.position = startB;
-        blockB.transform.position = startA;
-
-        // Blokların bağlı olduğu node'ları değiştir
-        Node tempNode = blockA.node;
-        blockA.SetBlock(blockB.node);
-        blockB.SetBlock(tempNode);
-    }
-
 
     public enum GameState
     {
-        GenerateLevel,
+        Menu,
+        Play,
         SpawningBlocks,
         WaitingInput,
         Blasting,

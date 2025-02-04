@@ -2,26 +2,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Collections;
-using System;
 using Random = UnityEngine.Random;
+using DG.Tweening;
 
 public class Block : MonoBehaviour
 {
-    public static event Action<Block> OnBlockSpawned;
-
     public Node node;
     public bool isBlastable = false;
     public int neighboursCount = 0;
     public int blockType;
     public List<Block> neighbours = new List<Block>();
 
-    private float shakeDuration = 0.3f;
-    private float shakeMagnitude = 0.1f;
+
     Vector2 originalPosition;
 
     private void Start()
     {
-        OnBlockSpawned?.Invoke(this); // Event tetikleniyor
+         // Event tetikleniyor
     }
     public void SetBlock(Node aNode)
     {
@@ -29,8 +26,9 @@ public class Block : MonoBehaviour
         node = aNode;
         node.OccupiedBlock = this;
         transform.SetParent(node.transform);
+       
     }
-
+    
     public void FindNeighbours(List<Node> nodes)
     {
         neighbours.Clear();
@@ -49,7 +47,6 @@ public class Block : MonoBehaviour
                 }
             }
         }
-
         neighboursCount = neighbours.Count;
         isBlastable = neighboursCount > 0;
     }
@@ -78,22 +75,21 @@ public class Block : MonoBehaviour
         return visited;
     }
 
-   
 
-    public void Shake()
+    public void Shake(float aShakeDuration, float aShakeMagnitude)
     {
         originalPosition = node.Pos;
-        StartCoroutine(ShakeCoroutine());
+        StartCoroutine(ShakeCoroutine(aShakeDuration,aShakeMagnitude));
     }
 
-    private IEnumerator ShakeCoroutine()
+    private IEnumerator ShakeCoroutine(float aShakeDuration,float aShakeMagnitude)
     {
         float elapsedTime = 0f;
 
-        while (elapsedTime < shakeDuration)
+        while (elapsedTime < aShakeDuration)
         {
-            float xShake = Random.Range(-shakeMagnitude, shakeMagnitude);
-            float yShake = Random.Range(-shakeMagnitude, shakeMagnitude);
+            float xShake = Random.Range(-aShakeMagnitude, aShakeMagnitude);
+            float yShake = Random.Range(-aShakeMagnitude, aShakeMagnitude);
 
             transform.position = new Vector3(originalPosition.x + xShake, originalPosition.y + yShake);
             elapsedTime += Time.deltaTime;
@@ -106,4 +102,5 @@ public class Block : MonoBehaviour
     {
         BlockManager.Instance.TryBlastBlock(this);
     }
+
 }

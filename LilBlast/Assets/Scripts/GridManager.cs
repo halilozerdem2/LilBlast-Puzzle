@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using DG.Tweening;
-using System.Linq;
 using UnityEngine;
 using static GameManager;
 
@@ -15,14 +14,14 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Node _nodePrefab;
 
     public Dictionary<Vector2Int, Node> _nodes;
-    public HashSet<Node> freeNodes;
+    public List<Node> freeNodes;
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            //DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -31,7 +30,7 @@ public class GridManager : MonoBehaviour
         }
 
         _nodes = new Dictionary<Vector2Int, Node>();
-        freeNodes = new HashSet<Node>();
+        freeNodes = new List<Node>();
 
     }
 
@@ -53,15 +52,18 @@ public class GridManager : MonoBehaviour
         var board = Instantiate(_boardPrefab, center, Quaternion.identity);
         board.size = new Vector2(_width, _height);
 
-        Camera.main.transform.position = new Vector3(center.x, center.y, -10);
+        Camera.main.transform.position = new Vector3(center.x, center.y + 1f, -10);
+        Debug.Log("Grid oluşturuldu: boş hücre sayısı : " + freeNodes.Count);
         GameManager.Instance.ChangeState(GameState.SpawningBlocks);
     }
 
     public void UpdateGrid()
     {
+        freeNodes.Clear(); // Önce freeNodes listesini temizle, en güncel haliyle ekleyelim
+
         for (int x = 0; x < _width; x++)
         {
-            int emptyY = -1; // Boş bir hücre bulunana kadar -1 olarak kalacak
+            int emptyY = -1; // İlk boş hücreyi saklayacak değişken
 
             for (int y = 0; y < _height; y++)
             {
@@ -69,29 +71,37 @@ public class GridManager : MonoBehaviour
 
                 if (currentNode.OccupiedBlock == null)
                 {
-                    if (emptyY == -1) emptyY = y; // İlk boş hücreyi kaydet
+                    if (emptyY == -1) emptyY = y; // İlk boş hücreyi bul
+                    freeNodes.Add(currentNode); // Boş hücreyi freeNodes listesine ekle
                     continue;
                 }
 
-                if (emptyY != -1) // Eğer yukarıda boş bir hücre varsa
+                if (emptyY != -1) // Eğer yukarıda boş hücre varsa
                 {
                     Node emptyNode = _nodes[new Vector2Int(x, emptyY)];
                     Block blockToMove = currentNode.OccupiedBlock;
 
+                    // Eski konumu boşalt
+                    blockToMove.node.OccupiedBlock = null;
+
+                    // Eski boş hücre listesine ekle
+                    freeNodes.Add(blockToMove.node);
+
+                    // Blok yeni yerine taşındı, bu hücre artık boş değil
+                    freeNodes.Remove(emptyNode);
+
                     blockToMove.SetBlock(emptyNode);
                     blockToMove.transform.DOMove(emptyNode.Pos, 0.3f).SetEase(Ease.OutBounce);
 
-                    currentNode.OccupiedBlock = null;
-                    emptyNode.OccupiedBlock = blockToMove;
-
-                    emptyY++; // Bir sonraki boş yere geç
+                    emptyY++; // Bir sonraki boş hücreye geç
                 }
             }
         }
 
-        UpdateFreeNodes();
+        Debug.Log("Bloklar aşağı düştü | Boş hücre sayısı : " + freeNodes.Count);
         GameManager.Instance.ChangeState(GameState.SpawningBlocks);
     }
+
 
 
     public void UpdateFreeNodes()
@@ -102,8 +112,13 @@ public class GridManager : MonoBehaviour
             if (node.OccupiedBlock == null)
             {
                 freeNodes.Add(node);
+               //Debug.Log("HATA: Node " + node.gridPosition + " boş olarak kaydedildi!");
+            }
+            else
+            {
+                //Debug.LogError("Node " + node.gridPosition + " dolu, Block: " + node.OccupiedBlock.name);
             }
         }
     }
-}
 
+}
