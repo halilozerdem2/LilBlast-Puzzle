@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Linq;
 using System.Collections;
 using Random = UnityEngine.Random;
+using static GameManager;
 
 public class Block : MonoBehaviour
 {
@@ -12,9 +13,14 @@ public class Block : MonoBehaviour
     public int blockType;
     public List<Block> neighbours = new List<Block>();
 
+    private BoxCollider2D collider;
+
 
     Vector2 originalPosition;
-
+    private void Awake()
+    {
+        collider = GetComponent<BoxCollider2D>();
+    }
     private void Start()
     {
          // Event tetikleniyor
@@ -99,7 +105,13 @@ public class Block : MonoBehaviour
 
     private void OnMouseDown()
     {
-        BlockManager.Instance.TryBlastBlock(this);
+        if (GameManager.Instance._state == GameState.WaitingInput)
+            BlockManager.Instance.TryBlastBlock(this);
+    }
+
+    public void SetBlocksInteractable(bool interactable)
+    {
+        collider.enabled = interactable;
     }
 
 }

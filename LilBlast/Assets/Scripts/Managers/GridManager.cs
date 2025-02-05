@@ -43,15 +43,14 @@ public class GridManager : MonoBehaviour
         var board = Instantiate(_boardPrefab, center, Quaternion.identity);
         board.size = new Vector2(_width, _height);
 
-        Camera.main.transform.position = new Vector3(center.x, center.y + 1f, -10);
+        Camera.main.transform.position = new Vector3(center.x, center.y + 1.4f, -10);
         Debug.Log("Grid oluşturuldu: boş hücre sayısı : " + freeNodes.Count);
         GameManager.Instance.ChangeState(GameState.SpawningBlocks);
     }
 
     public void UpdateGrid()
     {
-        if (GameManager.Instance._state == GameState.Lose || GameManager.Instance._state == GameState.Win)
-            return;
+        if (GameManager.Instance._state == GameManager.GameState.SpawningBlocks) return;
             freeNodes.Clear(); // Önce freeNodes listesini temizle, en güncel haliyle ekleyelim
 
         for (int x = 0; x < _width; x++)

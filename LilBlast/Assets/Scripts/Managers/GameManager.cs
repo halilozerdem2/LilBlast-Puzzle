@@ -27,7 +27,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        ChangeState(GameState.Play);
+        ChangeState(GameState.Menu);
     }
 
     public void ChangeState(GameState newState)
@@ -37,11 +37,11 @@ public class GameManager : MonoBehaviour
         switch (newState)
         {
             case GameState.Menu:
-                canvas.ActivateMenuPanel();
-                break;
-
-            case GameState.Play:
                 Reset();
+                break;
+                
+            case GameState.Play:
+
                 handler.AssignTarget();
                 GridManager.Instance.GenerateGrid();
                 ChangeState(GameState.SpawningBlocks);
@@ -50,7 +50,6 @@ public class GameManager : MonoBehaviour
             case GameState.SpawningBlocks:
                 BlockManager.Instance.SpawnBlocks();
                 OnBlockSpawned?.Invoke();
-                ChangeState(GameState.WaitingInput);
                 break;
 
             case GameState.WaitingInput:

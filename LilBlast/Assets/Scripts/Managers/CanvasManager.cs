@@ -1,22 +1,35 @@
 using UnityEngine;
 public class CanvasManager : MonoBehaviour
 {
-    [SerializeField] GameObject menuPanel;
+    [SerializeField] GameObject mainMenuPanel;
     [SerializeField] GameObject gamePanel;
     [SerializeField] GameObject lostPanel;
     [SerializeField] GameObject winPanel;
+    [SerializeField] GameObject pausePanel;
+    ShuffleManager shuffle;
+    private void Awake()
+    {
+        shuffle = FindAnyObjectByType<ShuffleManager>();
+    }
 
-    public void ActivateMenuPanel()
+    public void ActivateMainMenu()
     {
         Time.timeScale = 0f;
         DeactivateAllPanels();
-        menuPanel.SetActive(true);
+        mainMenuPanel.SetActive(true);
+        GameManager.Instance.ChangeState(GameManager.GameState.Menu);
     }
 
     public void ActivateWinPanel()
     {
         DeactivateAllPanels();
         winPanel.SetActive(true);
+        Time.timeScale = 0f;
+    }
+    public void Pause()
+    {
+        DeactivateAllPanels();
+        pausePanel.SetActive(true);
         Time.timeScale = 0f;
     }
 
@@ -29,28 +42,38 @@ public class CanvasManager : MonoBehaviour
 
     public void DeactivateAllPanels()
     {
-        menuPanel.SetActive(false);
+        mainMenuPanel.SetActive(false);
         gamePanel.SetActive(false);
         lostPanel.SetActive(false);
         winPanel.SetActive(false);
+        pausePanel.SetActive(false);
         Time.timeScale = 1f;
     }
 
-    public void Play()
+    public void PlayAgain()
     {
+        GameManager.Instance.ChangeState(GameManager.GameState.Play);
         DeactivateAllPanels();
         GameManager.Instance.RestartGame();
-        GameManager.Instance.ChangeState(GameManager.GameState.Play);
         gamePanel.SetActive(true);
     }
     public void Resume()
     {
         DeactivateAllPanels();
         gamePanel.SetActive(true);
+        pausePanel.SetActive(false);
         GameManager.Instance.ChangeState(GameManager.GameState.WaitingInput);
     }
 
     public void TryAgain()
+    {
+        DeactivateAllPanels();
+        GameManager.Instance.ChangeState(GameManager.GameState.Play);
+        GameManager.Instance.RestartGame();
+        gamePanel.SetActive(true);
+
+    }
+    public void Play()
     {
         DeactivateAllPanels();
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
@@ -61,5 +84,10 @@ public class CanvasManager : MonoBehaviour
     public void Quit()
     {
         Application.Quit();
+    }
+
+    public void Shuffle()
+    {
+        shuffle.HandleShuffle();
     }
 }

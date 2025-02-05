@@ -16,16 +16,19 @@ public class BlockManager : MonoBehaviour
     public List<Block> _blocks;
 
     public GameOverHandler handler;
+    private bool isFirstCall;
 
     private void Awake()
     {
-            Instance = this;
-
+        Instance = this;
         _blocks = new List<Block>();
+        isFirstCall = true;
 
     }
+
     public void SpawnBlocks()
     {
+        if (GameManager.Instance._state != GameState.SpawningBlocks) return;
         List<Node> nodesToFill = GridManager.freeNodes.ToList();
         int counter = 0;
         foreach (var node in nodesToFill)
@@ -90,8 +93,7 @@ public class BlockManager : MonoBehaviour
 
     public void TryBlastBlock(Block block)
     {
-        Debug.Log("Bloklar patlatılacak : boş hücre sayısı : " + GridManager.freeNodes.Count);
-
+        
         HashSet<Block> group = block.FloodFill();
         if (group.Count >= 2)
         {
