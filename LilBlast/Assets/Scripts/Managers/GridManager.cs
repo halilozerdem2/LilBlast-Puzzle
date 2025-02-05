@@ -14,20 +14,11 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Node _nodePrefab;
 
     public Dictionary<Vector2Int, Node> _nodes;
-    public List<Node> freeNodes;
+    public static List<Node> freeNodes;
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            //DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
+        Instance = this;
 
         _nodes = new Dictionary<Vector2Int, Node>();
         freeNodes = new List<Node>();
@@ -59,7 +50,9 @@ public class GridManager : MonoBehaviour
 
     public void UpdateGrid()
     {
-        freeNodes.Clear(); // Önce freeNodes listesini temizle, en güncel haliyle ekleyelim
+        if (GameManager.Instance._state == GameState.Lose || GameManager.Instance._state == GameState.Win)
+            return;
+            freeNodes.Clear(); // Önce freeNodes listesini temizle, en güncel haliyle ekleyelim
 
         for (int x = 0; x < _width; x++)
         {
@@ -109,9 +102,13 @@ public class GridManager : MonoBehaviour
         freeNodes.Clear();
         foreach (var node in _nodes.Values)
         {
+            if(node.OccupiedBlock==null)
+
             if (node.OccupiedBlock == null)
             {
                 freeNodes.Add(node);
+                node.OccupiedBlock.SetBlock(node);
+
                //Debug.Log("HATA: Node " + node.gridPosition + " boş olarak kaydedildi!");
             }
             else
@@ -120,5 +117,33 @@ public class GridManager : MonoBehaviour
             }
         }
     }
+
+
+    public void UpdateOccupiedBlock()
+    {
+        foreach (var node in _nodes.Values)
+        {
+            if (node.OccupiedBlock == null) // Sadece boş düğümler kontrol edilecek
+            {
+                foreach (var block in BlockManager.Instance._blocks)
+                {
+                    if (block.node == node) // Eğer blok bu düğüme aitse
+                    {
+                        node.OccupiedBlock = block;
+                        break; // Gereksiz tekrarları önlemek için döngüyü kır
+                    }
+                }
+            }
+        }
+    }
+
+    public void ResetGrid()
+    {
+        _nodes.Clear();
+        freeNodes.Clear();
+        Debug.Log("Grid tamamen sıfırlandı.");
+    }
+
+
 
 }

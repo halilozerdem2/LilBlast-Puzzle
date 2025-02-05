@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine.UI;
 
 public class GameOverHandler : MonoBehaviour
 {
@@ -19,24 +19,27 @@ public class GameOverHandler : MonoBehaviour
     private void Awake()
     {
         collectedBlocks = new List<Block>();
-        targetBlockType = Random.Range(0, blockIcons.Length);
-        targetBlockCount = Random.Range(15, 25);
-        moves = Random.Range(45, 80);
+        
+        AssignTarget();
     }
 
-    private void Start()
+    public void AssignTarget()
     {
+        collectedBlocks.Clear();
+        targetBlockType = Random.Range(0, blockIcons.Length);
+        targetBlockCount = Random.Range(20, 30);
+        moves = Random.Range(35, 55);
         UpdateUI();
     }
 
     private void OnEnable()
     {
-        //BlockManager.OnBlockBlasted += CheckCollectedBlocks;
+        BlockManager.OnBlockBlasted += CheckCollectedBlocks;
     }
 
     private void OnDisable()
     {
-        //BlockManager.OnBlockBlasted -= CheckCollectedBlocks;
+        BlockManager.OnBlockBlasted -= CheckCollectedBlocks;
     }
 
     public void CheckCollectedBlocks(Block aTargetBlock)
@@ -69,7 +72,7 @@ public class GameOverHandler : MonoBehaviour
         }
     }
 
-    public void DecreaseMove() // Yeni fonksiyon
+    public void DecreaseMove()
     {
         moves--;
         UpdateUI();

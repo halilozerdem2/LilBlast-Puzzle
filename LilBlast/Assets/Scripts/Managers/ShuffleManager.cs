@@ -1,51 +1,60 @@
 using DG.Tweening;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class ShuffleManager : MonoBehaviour
 {
+    public  List<Node> availableNodes;
+    public List<Block> blocks;
+
     public void HandleShuffle()
     {
-        Debug.Log("Shuffle Başladı  |: boş hücre sayısı : " + GridManager.Instance.freeNodes.Count);
+        //.Log("Shuffle Başladı  |:blok sayısı : " + BlockManager.Instance._blocks.Count);
         //GridManager.Instance.freeNodes.Clear();
         foreach (var node in GridManager.Instance._nodes.Values)
         {
-            GridManager.Instance.freeNodes.Add(node);
+            GridManager.freeNodes.Add(node);
+            node.OccupiedBlock = null;
 
         }
-        Debug.Log("Grid boşaltıldı |: boş hücre sayısı : " + GridManager.Instance.freeNodes.Count);
+        //Debug.Log("Grid boşaltıldı |: boş hücre sayısı : " + GridManager.freeNodes.Count);
 
         //GridManager.Instance.UpdateFreeNodes(); // Güncellenmiş boş node listesini al
-        List<Node> availableNodes = new List<Node>(GridManager.Instance.freeNodes); // Shuffle için boş düğümleri listeye al
+        availableNodes = new List<Node>(GridManager.Instance._nodes.Values); // Shuffle için boş düğümleri listeye al
+        blocks = new List<Block>(BlockManager.Instance._blocks);
 
-        if (availableNodes.Count < BlockManager.Instance._blocks.Count)
+        if (availableNodes.Count < blocks.Count)
         {
             Debug.LogError("Shuffle için yeterli boş node bulunamadı!");
             return;
         }
+            Debug.Log(availableNodes.Count);
 
-        foreach (var block in BlockManager.Instance._blocks)
+        foreach (var block in blocks)
         {
-            Node newNode = AssignNewPosition(block.blockType, availableNodes);
-            if (newNode == null)
+            block.Shake(0.2f, 0.1f);
+            Node targetNode = AssignNewPosition(block.blockType, availableNodes);
+
+            if (targetNode == null)
             {
                 Debug.LogWarning("Geçerli bir shuffle pozisyonu bulunamadı, fallback olarak rastgele atama yapılacak.");
-                newNode = availableNodes[Random.Range(0, availableNodes.Count)];
+                targetNode = availableNodes[Random.Range(0, availableNodes.Count)];
             }
 
-            block.transform.DOMove(newNode.Pos, 2f).SetEase(Ease.InOutQuad);
-            block.SetBlock(newNode);
+            block.SetBlock(targetNode);
+            //Debug.Log("grid pozisyonu : "  + targetNode.gridPosition+"Blok : " +targetNode.OccupiedBlock);
+            GridManager.freeNodes.Remove(targetNode);// Seçilen node artık dolu olduğu için listeden çıkar
+            //Debug.Log("grid doluyor |: boş hücre sayısı : " + GridManager.freeNodes.Count);
+            block.transform.DOMove(targetNode.Pos, 1f).SetEase(Ease.InOutQuad);
+
+
+            availableNodes.Remove(targetNode);
             
-            availableNodes.Remove(newNode);
-            GridManager.Instance.freeNodes.Remove(newNode);// Seçilen node artık dolu olduğu için listeden çıkar
         }
-
-        Debug.Log("KARIŞTIRMA BİTTİ |: boş hücre sayısı : " + GridManager.Instance.freeNodes.Count);
-
-        GridManager.Instance.UpdateFreeNodes();
+        GridManager.Instance.UpdateOccupiedBlock();
         BlockManager.Instance.FindAllNeighbours();
+        GameManager.Instance.ChangeState(GameManager.GameState.WaitingInput);
 
     }
 
@@ -54,7 +63,7 @@ public class ShuffleManager : MonoBehaviour
         float percentage = Random.Range(0f, 1f);
         Node newNode = null;
 
-        if (percentage > 1f) // %10 ihtimalle belirli bir sütuna göre atama
+        if (percentage >= .3f) // %70 tamamen rastgele
         {
             // Fisher-Yates Shuffle uygulanarak rastgele seçme
             int n = availableNodes.Count;
@@ -66,8 +75,7 @@ public class ShuffleManager : MonoBehaviour
 
             newNode = availableNodes[0]; // Fisher-Yates ile karıştırılan ilk düğümü seç
         }
-        else // %70 ihtimalle tamamen rastgele atama
-
+        else // %30 belirlenen sütuna atama
         {
             int selectedColumn = BlockType.Instance.SelectColumn(type);
             List<Node> columnNodes = availableNodes.FindAll(n => n.gridPosition.x == selectedColumn);

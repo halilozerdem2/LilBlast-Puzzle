@@ -10,22 +10,13 @@ public class ObjectPool : MonoBehaviour
     public int poolSize = 10;
 
     private Dictionary<int, Queue<GameObject>> particlePools = new Dictionary<int, Queue<GameObject>>();
-    private Dictionary<int, Queue<GameObject>> blockPools = new Dictionary<int, Queue<GameObject>>();
+    //private Dictionary<int, Queue<GameObject>> blockPools = new Dictionary<int, Queue<GameObject>>();
     private AudioSource audioSource;
 
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
-
+        Instance = this;
+        
         audioSource = gameObject.AddComponent<AudioSource>();
         InitializePools();
     }
@@ -42,11 +33,12 @@ public class ObjectPool : MonoBehaviour
         {
             particlePools[i] = CreatePool(particlePrefabs[i]);
         }
-
+       /*
         for (int i = 0; i < blockPrefabs.Length; i++)
         {
             blockPools[i] = CreatePool(blockPrefabs[i]);
         }
+       */
     }
 
     private Queue<GameObject> CreatePool(GameObject prefab)
@@ -121,7 +113,7 @@ public class ObjectPool : MonoBehaviour
         obj.SetActive(false);
         pool.Enqueue(obj);
     }
-
+    /*
     public GameObject GetBlockFromPool(int type, Vector3 position, Quaternion rotation)
     {
         if (blockPools.ContainsKey(type) && blockPools[type].Count > 0)
@@ -139,4 +131,10 @@ public class ObjectPool : MonoBehaviour
         }
     }
 
+    public void ReturnToBlockPool(int aBlockType,GameObject aBlock)
+    {
+        blockPools[aBlockType].Enqueue(aBlock);
+        aBlock.SetActive(false);
+    }
+    */
 }

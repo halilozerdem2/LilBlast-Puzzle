@@ -1,11 +1,6 @@
-using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
 using System;
-using Random = UnityEngine.Random;
-using System.Collections;
 using UnityEngine.SceneManagement;
-using DG.Tweening;
 
 public class GameManager : MonoBehaviour
 {
@@ -16,8 +11,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private SpriteRenderer _boardPrefab;
 
     [SerializeField] private GameObject blastEffect;
-    ShuffleManager shuffle;
-
+    [SerializeField] ShuffleManager shuffle;
+    [SerializeField] CanvasManager canvas;
+    [SerializeField] GameOverHandler handler;
     public GameState _state;
 
     private void Awake()
@@ -37,39 +33,73 @@ public class GameManager : MonoBehaviour
     public void ChangeState(GameState newState)
     {
         _state = newState;
+
         switch (newState)
         {
             case GameState.Menu:
-                //
+                canvas.ActivateMenuPanel();
                 break;
+
             case GameState.Play:
-                //SceneManager.LoadScene(1);
+                Reset();
+                handler.AssignTarget();
                 GridManager.Instance.GenerateGrid();
+                ChangeState(GameState.SpawningBlocks);
                 break;
+
             case GameState.SpawningBlocks:
                 BlockManager.Instance.SpawnBlocks();
                 OnBlockSpawned?.Invoke();
+                ChangeState(GameState.WaitingInput);
                 break;
+
             case GameState.WaitingInput:
                 break;
+
             case GameState.Blasting:
                 GridManager.Instance.UpdateGrid();
                 break;
+
             case GameState.Deadlock:
                 shuffle.HandleShuffle();
                 break;
+
             case GameState.Win:
-                SceneManager.LoadScene(2);
+                canvas.ActivateWinPanel();
                 break;
+
             case GameState.Lose:
-                SceneManager.LoadScene(3);
+                canvas.ActivateLostPanel();
                 break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(newState), newState, null);
         }
     }
+    public void RestartGame()
+    {
+        Time.timeScale = 1;
 
-    
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+    public void Reset()
+    {
+        // Grid ve blokları temizle
+        foreach (var block in BlockManager.Instance._blocks)
+        {
+            Destroy(block.gameObject);
+        }
+        foreach (var node in GridManager.Instance._nodes.Values)
+        {
+            Destroy(node);
+        }
+
+        BlockManager.Instance._blocks.Clear();
+        GridManager.freeNodes.Clear();
+        GridManager.Instance._nodes.Clear();
+        handler.collectedBlocks.Clear();
+        shuffle.availableNodes.Clear();
+        shuffle.availableNodes.Clear();
+    }
+
+
 
     public enum GameState
     {
@@ -81,6 +111,5 @@ public class GameManager : MonoBehaviour
         Deadlock,
         Win,
         Lose,
-        Pause
     }
 }
