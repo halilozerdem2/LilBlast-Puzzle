@@ -32,6 +32,7 @@ public class GameManager : MonoBehaviour
 
     public void ChangeState(GameState newState)
     {
+        Debug.Log("State changing from " + _state + " to " + newState);
         _state = newState;
 
         switch (newState)
@@ -44,7 +45,7 @@ public class GameManager : MonoBehaviour
 
                 handler.AssignTarget();
                 GridManager.Instance.GenerateGrid();
-                ChangeState(GameState.SpawningBlocks);
+                //ChangeState(GameState.SpawningBlocks);
                 break;
 
             case GameState.SpawningBlocks:
@@ -56,6 +57,8 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Blasting:
+                break;
+            case GameState.Falling:
                 GridManager.Instance.UpdateGrid();
                 break;
 
@@ -107,6 +110,7 @@ public class GameManager : MonoBehaviour
         SpawningBlocks,
         WaitingInput,
         Blasting,
+        Falling,
         Deadlock,
         Win,
         Lose,

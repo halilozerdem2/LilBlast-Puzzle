@@ -26,31 +26,39 @@ public class GridManager : MonoBehaviour
     }
 
     public void GenerateGrid()
+{
+    for (int x = 0; x < _width; x++)
     {
-        for (int x = 0; x < _width; x++)
+        for (int y = 0; y < _height; y++)
         {
-            for (int y = 0; y < _height; y++)
-            {
-                var node = Instantiate(_nodePrefab, new Vector3(x, y), Quaternion.identity);
-                node.gridPosition = new Vector2Int(x, y);
-                _nodes[node.gridPosition] = node;
+            var node = Instantiate(_nodePrefab, new Vector3(x, y), Quaternion.identity);
+            node.gridPosition = new Vector2Int(x, y);
+            _nodes[node.gridPosition] = node;
 
-                freeNodes.Add(node); // Başlangıçta tüm düğümler boş olacak
-            }
+            freeNodes.Add(node); // Başlangıçta tüm düğümler boş olacak
         }
-
-        var center = new Vector2((float)_width / 2 - 0.5f, (float)_height / 2 - 0.5f);
-        var board = Instantiate(_boardPrefab, center, Quaternion.identity);
-        board.size = new Vector2(_width, _height);
-
-        Camera.main.transform.position = new Vector3(center.x, center.y + 1.4f, -10);
-        Debug.Log("Grid oluşturuldu: boş hücre sayısı : " + freeNodes.Count);
-        GameManager.Instance.ChangeState(GameState.SpawningBlocks);
     }
+
+    var center = new Vector2((float)_width / 2 - 0.5f, (float)_height / 2 - 0.5f);
+    var board = Instantiate(_boardPrefab, center, Quaternion.identity);
+    board.transform.localScale = new Vector3(_width, _height, 1);
+
+        Camera.main.transform.position = new Vector3(center.x, center.y+3f, -10); // Kamera ortalama
+
+    // Kamera boyutunu grid büyüklüğüne göre ayarla
+    float aspectRatio = (float)Screen.width / Screen.height;
+    float verticalSize = _height / 2f + .5f; // +1 biraz kenar boşluğu eklemek için
+    float horizontalSize = (_width / 2f + .5f) / aspectRatio;
+    Camera.main.orthographicSize = Mathf.Max(verticalSize, horizontalSize); 
+
+    GameManager.Instance.ChangeState(GameState.SpawningBlocks);
+}
+
+
 
     public void UpdateGrid()
     {
-        if (GameManager.Instance._state == GameManager.GameState.SpawningBlocks) return;
+        //if (GameManager.Instance._state != GameManager.GameState.Falling) return;
             freeNodes.Clear(); // Önce freeNodes listesini temizle, en güncel haliyle ekleyelim
 
         for (int x = 0; x < _width; x++)
@@ -90,7 +98,7 @@ public class GridManager : MonoBehaviour
             }
         }
 
-        Debug.Log("Bloklar aşağı düştü | Boş hücre sayısı : " + freeNodes.Count);
+      //  Debug.Log("Bloklar aşağı düştü | Boş hücre sayısı : " + freeNodes.Count);
         GameManager.Instance.ChangeState(GameState.SpawningBlocks);
     }
 

@@ -11,7 +11,7 @@ public class ShuffleManager : MonoBehaviour
     public void HandleShuffle()
     {
         //.Log("Shuffle Başladı  |:blok sayısı : " + BlockManager.Instance._blocks.Count);
-        //GridManager.Instance.freeNodes.Clear();
+        //GridManager.freeNodes.Clear();
         foreach (var node in GridManager.Instance._nodes.Values)
         {
             GridManager.freeNodes.Add(node);

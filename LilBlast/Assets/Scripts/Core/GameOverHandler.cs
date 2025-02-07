@@ -13,13 +13,14 @@ public class GameOverHandler : MonoBehaviour
     private int moves;
     private int targetBlockCount;
     private int targetBlockType;
+    private int currentTarget;
 
     public List<Block> collectedBlocks;
+    public List<Block> blastedBlocks;
 
     private void Awake()
     {
         collectedBlocks = new List<Block>();
-        
         AssignTarget();
     }
 
@@ -27,8 +28,9 @@ public class GameOverHandler : MonoBehaviour
     {
         collectedBlocks.Clear();
         targetBlockType = Random.Range(0, blockIcons.Length);
-        targetBlockCount = Random.Range(20, 30);
-        moves = Random.Range(35, 55);
+        targetBlockCount = Random.Range(120, 140);
+        currentTarget = targetBlockCount;
+        moves = Random.Range(45, 60);
         UpdateUI();
     }
 
@@ -64,7 +66,7 @@ public class GameOverHandler : MonoBehaviour
     private void UpdateUI()
     {
         movesCountText.text = moves.ToString();
-        collectedBlockCountText.text = $"{collectedBlocks.Count} / {targetBlockCount}";
+        collectedBlockCountText.text = (currentTarget).ToString();
 
         if (blockIcons != null && blockIcons.Length > targetBlockType && targetBlock != null)
         {
@@ -76,5 +78,15 @@ public class GameOverHandler : MonoBehaviour
     {
         moves--;
         UpdateUI();
+    }
+
+    public void UpdateTarget(Block b, int a)
+    {
+        if (b.blockType == targetBlockType)
+        {
+            currentTarget -= a;
+        }
+        UpdateUI();
+        //blastedGroupSize = 0;
     }
 }

@@ -83,7 +83,8 @@ public class Block : MonoBehaviour
 
     public void Shake(float aShakeDuration, float aShakeMagnitude)
     {
-        originalPosition = node.Pos;
+        originalPosition = this.transform.position;
+        //originalPosition = node.Pos;
         StartCoroutine(ShakeCoroutine(aShakeDuration,aShakeMagnitude));
     }
 
@@ -105,8 +106,13 @@ public class Block : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (GameManager.Instance._state == GameState.WaitingInput)
+        if (Instance._state == GameState.WaitingInput)
+        {
             BlockManager.Instance.TryBlastBlock(this);
+
+        }
+        else
+            Debug.Log("Failed");
     }
 
     public void SetBlocksInteractable(bool interactable)
