@@ -15,12 +15,12 @@ public class BlockShapeShifter : MonoBehaviour
 
     private void OnEnable()
     {
-        GameManager.OnBlockSpawned += DetermineIcon;
+        GameManager.OnGridReady += DetermineIcon;
     }
 
     private void OnDisable()
     {
-        GameManager.OnBlockSpawned -= DetermineIcon;
+        GameManager.OnGridReady -= DetermineIcon;
     }
 
 

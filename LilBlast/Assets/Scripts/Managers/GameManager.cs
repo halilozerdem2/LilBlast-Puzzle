@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-    public static event Action OnBlockSpawned;
+    public static event Action OnGridReady;
 
     [SerializeField] private Node _nodePrefab;
     [SerializeField] private SpriteRenderer _boardPrefab;
@@ -50,10 +50,10 @@ public class GameManager : MonoBehaviour
 
             case GameState.SpawningBlocks:
                 BlockManager.Instance.SpawnBlocks();
-                OnBlockSpawned?.Invoke();
                 break;
 
             case GameState.WaitingInput:
+                OnGridReady?.Invoke();
                 break;
 
             case GameState.Blasting:

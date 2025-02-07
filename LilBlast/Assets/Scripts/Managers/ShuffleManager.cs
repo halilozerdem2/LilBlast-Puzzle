@@ -1,6 +1,7 @@
 using DG.Tweening;
 using System.Collections.Generic;
 using UnityEngine;
+using static GameManager;
 using Random = UnityEngine.Random;
 
 public class ShuffleManager : MonoBehaviour
@@ -46,7 +47,10 @@ public class ShuffleManager : MonoBehaviour
             //Debug.Log("grid pozisyonu : "  + targetNode.gridPosition+"Blok : " +targetNode.OccupiedBlock);
             GridManager.freeNodes.Remove(targetNode);// Seçilen node artık dolu olduğu için listeden çıkar
             //Debug.Log("grid doluyor |: boş hücre sayısı : " + GridManager.freeNodes.Count);
-            block.transform.DOMove(targetNode.Pos, 1f).SetEase(Ease.InOutQuad);
+            block.transform.DOMove(targetNode.Pos, 1f).SetEase(Ease.InOutQuad)
+             .OnComplete(() => {
+                 Instance.ChangeState(GameState.WaitingInput);
+             }); ; ;
 
 
             availableNodes.Remove(targetNode);
@@ -54,7 +58,6 @@ public class ShuffleManager : MonoBehaviour
         }
         GridManager.Instance.UpdateOccupiedBlock();
         BlockManager.Instance.FindAllNeighbours();
-        GameManager.Instance.ChangeState(GameManager.GameState.WaitingInput);
 
     }
 
@@ -63,7 +66,7 @@ public class ShuffleManager : MonoBehaviour
         float percentage = Random.Range(0f, 1f);
         Node newNode = null;
 
-        if (percentage >= .3f) // %70 tamamen rastgele
+        if (percentage >= .2f) // %70 tamamen rastgele
         {
             // Fisher-Yates Shuffle uygulanarak rastgele seçme
             int n = availableNodes.Count;
@@ -75,7 +78,7 @@ public class ShuffleManager : MonoBehaviour
 
             newNode = availableNodes[0]; // Fisher-Yates ile karıştırılan ilk düğümü seç
         }
-        else // %30 belirlenen sütuna atama
+        else if(percentage>=.1f) // %10 belirlenen sütuna atama
         {
             int selectedColumn = BlockType.Instance.SelectColumn(type);
             List<Node> columnNodes = availableNodes.FindAll(n => n.gridPosition.x == selectedColumn);
@@ -83,6 +86,16 @@ public class ShuffleManager : MonoBehaviour
             if (columnNodes.Count > 0)
             {
                 newNode = columnNodes[Random.Range(0, columnNodes.Count)];
+            }
+        }
+        else
+        {
+            int selectedRow = BlockType.Instance.SelectRow(type);
+            List<Node> rowNodes = availableNodes.FindAll(n => n.gridPosition.y == selectedRow);
+
+            if (rowNodes.Count > 0)
+            {
+                newNode = rowNodes[Random.Range(0, rowNodes.Count)];
             }
         }
 

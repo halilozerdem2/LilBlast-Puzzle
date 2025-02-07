@@ -43,7 +43,7 @@ public class BlockType : MonoBehaviour
 
     public int SelectRow(int blockType)
     {
-        int rowIndex = (blockType + 3) % GridManager.Instance._width;
+        int rowIndex = (blockType + 3) % GridManager.Instance._height;
         //blok tipine göre sırasız sütun seçme
         return rowIndex;
     }

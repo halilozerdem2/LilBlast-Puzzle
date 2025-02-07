@@ -48,16 +48,19 @@ public class BlockManager : MonoBehaviour
             _blocks.Add(randomBlock);
 
 
-            randomBlock.transform.DOMove(node.Pos, 0.7f).SetEase(Ease.OutBounce);
+            randomBlock.transform.DOMove(node.Pos, 0.3f).SetEase(Ease.OutBounce)
+            .OnComplete(() => {
+                if (HasValidMoves())
+                    GameManager.Instance.ChangeState(GameState.WaitingInput);
+                else
+                    GameManager.Instance.ChangeState(GameState.Deadlock);
+            }); ;
             //Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
         }
        // Debug.Log("Block spawnland |: boş hücre sayısı : " + GridManager.freeNodes.Count);
         FindAllNeighbours();
 
-        if (HasValidMoves())
-            GameManager.Instance.ChangeState(GameState.WaitingInput);
-        else
-            GameManager.Instance.ChangeState(GameState.Deadlock);
+        
     }
 
     public void FindAllNeighbours()
@@ -70,6 +73,7 @@ public class BlockManager : MonoBehaviour
             }
         }
     }
+
 
     public bool HasValidMoves() // Deadlock Tespiti
     {

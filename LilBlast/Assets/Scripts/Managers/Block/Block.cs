@@ -83,8 +83,8 @@ public class Block : MonoBehaviour
 
     public void Shake(float aShakeDuration, float aShakeMagnitude)
     {
-        originalPosition = this.transform.position;
-        //originalPosition = node.Pos;
+        //originalPosition = this.transform.position;
+        originalPosition = node.Pos;
         StartCoroutine(ShakeCoroutine(aShakeDuration,aShakeMagnitude));
     }
 

@@ -42,24 +42,28 @@ public class GridManager : MonoBehaviour
     var center = new Vector2((float)_width / 2 - 0.5f, (float)_height / 2 - 0.5f);
     var board = Instantiate(_boardPrefab, center, Quaternion.identity);
     board.transform.localScale = new Vector3(_width, _height, 1);
-
-        Camera.main.transform.position = new Vector3(center.x, center.y+3f, -10); // Kamera ortalama
-
-    // Kamera boyutunu grid büyüklüğüne göre ayarla
-    float aspectRatio = (float)Screen.width / Screen.height;
-    float verticalSize = _height / 2f + .5f; // +1 biraz kenar boşluğu eklemek için
-    float horizontalSize = (_width / 2f + .5f) / aspectRatio;
-    Camera.main.orthographicSize = Mathf.Max(verticalSize, horizontalSize); 
-
-    GameManager.Instance.ChangeState(GameState.SpawningBlocks);
+        CenterCamera(center);
+    
 }
+    private void CenterCamera(Vector2 center)
+    {
+        Camera.main.transform.position = new Vector3(center.x, center.y + 2f, -10); // Kamera ortalama
+
+        // Kamera boyutunu grid büyüklüğüne göre ayarla
+        float aspectRatio = (float)Screen.width / Screen.height;
+        float verticalSize = _height / 2f + .5f; // +1 biraz kenar boşluğu eklemek için
+        float horizontalSize = (_width / 2f + .5f) / aspectRatio;
+        Camera.main.orthographicSize = Mathf.Max(verticalSize, horizontalSize);
+
+        GameManager.Instance.ChangeState(GameState.SpawningBlocks);
+    }
 
 
 
     public void UpdateGrid()
     {
         //if (GameManager.Instance._state != GameManager.GameState.Falling) return;
-            freeNodes.Clear(); // Önce freeNodes listesini temizle, en güncel haliyle ekleyelim
+        freeNodes.Clear(); // Önce freeNodes listesini temizle, en güncel haliyle ekleyelim
 
         for (int x = 0; x < _width; x++)
         {
@@ -91,15 +95,17 @@ public class GridManager : MonoBehaviour
                     freeNodes.Remove(emptyNode);
 
                     blockToMove.SetBlock(emptyNode);
-                    blockToMove.transform.DOMove(emptyNode.Pos, 0.3f).SetEase(Ease.OutBounce);
+                    blockToMove.transform.DOMove(emptyNode.Pos, 0.3f).SetEase(Ease.OutBounce)
+                        .OnComplete(() => {
+                            GameManager.Instance.ChangeState(GameState.SpawningBlocks);
+                        }); ;
 
                     emptyY++; // Bir sonraki boş hücreye geç
                 }
             }
         }
-
-      //  Debug.Log("Bloklar aşağı düştü | Boş hücre sayısı : " + freeNodes.Count);
         GameManager.Instance.ChangeState(GameState.SpawningBlocks);
+
     }
 
 
