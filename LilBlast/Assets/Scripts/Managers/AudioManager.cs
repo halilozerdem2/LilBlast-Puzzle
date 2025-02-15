@@ -3,35 +3,67 @@ using UnityEngine;
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance;
-    public AudioClip backgroundMusic;
+
+    [SerializeField] private AudioClip mainMenuMusic;
+    [SerializeField] private AudioClip[] gameSceneMusic;
 
     private AudioSource audioSource;
+    private int currentTrackIndex = 0;
 
     void Awake()
     {
-            Instance = this;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
 
         audioSource = gameObject.AddComponent<AudioSource>();
-        audioSource.loop = true;
+        audioSource.loop = false;
         audioSource.playOnAwake = false;
-
-        PlayBackgroundMusic();
+        audioSource.Stop();
     }
 
-    public void PlayBackgroundMusic()
+    void Update()
     {
-        if (backgroundMusic != null && !audioSource.isPlaying)
+        if (!audioSource.isPlaying)
         {
-            audioSource.clip = backgroundMusic;
+            PlayNextGameTrack();
+        }
+    }
+
+    public void PlayMainMenuMusic()
+    {
+        if (mainMenuMusic != null)
+        {
+            audioSource.clip = mainMenuMusic;
+            audioSource.loop = true;
             audioSource.Play();
         }
     }
 
-    public void StopBackgroundMusic()
+    public void PlayGameSceneMusic()
     {
-        if (audioSource.isPlaying)
-        {
-            audioSource.Stop();
-        }
+        currentTrackIndex = 0;
+        PlayNextGameTrack();
+    }
+
+    private void PlayNextGameTrack()
+    {
+        if (gameSceneMusic.Length == 0) return;
+
+        audioSource.clip = gameSceneMusic[currentTrackIndex];
+        audioSource.loop = false;
+        audioSource.Play();
+
+        currentTrackIndex = (currentTrackIndex + 1) % gameSceneMusic.Length;
+    }
+
+    public void StopMusic()
+    {
+        audioSource.Stop();
     }
 }

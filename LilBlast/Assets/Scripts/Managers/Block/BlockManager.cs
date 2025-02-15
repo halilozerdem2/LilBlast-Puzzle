@@ -32,16 +32,24 @@ public class BlockManager : MonoBehaviour
     {
         //if (GameManager.Instance._state != GameState.SpawningBlocks) return;
         List<Node> nodesToFill = GridManager.freeNodes.ToList();
-        int counter = 0;
+        int counter = 0, spawnIndex;
+        int targetBlockType = handler.targetBlockType;
+        
         foreach (var node in nodesToFill)
         {
-            GridManager.freeNodes.Remove(node);
-
             int deadlockIndex = counter % 5;
             int randomIndex = Random.Range(0, blockTypes.Length);
+            
+            float spawnAccuricyPercentage = Random.Range(0f, 1f);
+            if (spawnAccuricyPercentage <= 0.25f)
+                spawnIndex = targetBlockType;
+            else
+                spawnIndex = randomIndex;
+
+            GridManager.freeNodes.Remove(node);
 
             Vector3 spawnPos = new Vector3(node.Pos.x, GridManager.Instance._height + 1, 0);
-            Block randomBlock = Instantiate(blockTypes[randomIndex], spawnPos, Quaternion.identity);
+            Block randomBlock = Instantiate(blockTypes[spawnIndex], spawnPos, Quaternion.identity);
 
             counter++;
             randomBlock.SetBlock(node);

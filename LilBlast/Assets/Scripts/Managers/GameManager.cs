@@ -38,11 +38,14 @@ public class GameManager : MonoBehaviour
         switch (newState)
         {
             case GameState.Menu:
+                AudioManager.Instance.PlayMainMenuMusic();
                 Reset();
                 break;
                 
             case GameState.Play:
+               // AudioManager.Instance.StopMusic();
 
+                AudioManager.Instance.PlayGameSceneMusic();
                 handler.AssignTarget();
                 GridManager.Instance.GenerateGrid();
                 //ChangeState(GameState.SpawningBlocks);
@@ -67,10 +70,12 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Win:
+                AudioManager.Instance.StopMusic();
                 canvas.ActivateWinPanel();
                 break;
 
             case GameState.Lose:
+                AudioManager.Instance.StopMusic();
                 canvas.ActivateLostPanel();
                 break;
         }

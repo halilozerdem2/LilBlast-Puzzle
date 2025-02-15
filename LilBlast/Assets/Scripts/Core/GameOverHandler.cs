@@ -12,7 +12,7 @@ public class GameOverHandler : MonoBehaviour
 
     private int moves;
     private int targetBlockCount;
-    private int targetBlockType;
+    public int targetBlockType;
     private int currentTarget;
 
     public List<Block> collectedBlocks;
@@ -30,7 +30,7 @@ public class GameOverHandler : MonoBehaviour
         targetBlockType = Random.Range(0, blockIcons.Length);
         targetBlockCount = Random.Range(120, 140);
         currentTarget = targetBlockCount;
-        moves = Random.Range(80, 100);
+        moves = Random.Range(50, 75);
         UpdateUI();
     }
 
