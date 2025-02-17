@@ -119,33 +119,47 @@ public class BlockManager : MonoBehaviour
     public void TryBlastBlock(Block block)
     {
         if (GameManager.Instance._state != GameState.WaitingInput) return;
-
         HashSet<Block> group = block.DetermineGroup();
+      
         if (group.Count >= minBlastableBlockGroupSize)
         {
-
+            handler.DecreaseMove();
             handler.UpdateTarget(block, group.Count);
-
             GameManager.Instance.ChangeState(GameState.Blasting);
             BlastBlocks(group);
-            handler.DecreaseMove();
-            //if (GameManager.Instance._state != GameManager.GameState.WaitingInput) return;
-            if (group.Count >= 4)
+
+            if(block is RegularBlock && group.Count==4)
             {
-                var bombBlock=Instantiate(bomb, block.node.Pos, Quaternion.identity);
-                Block b = bombBlock.GetComponent<Block>();
-                b.SetBlock(block.node);
+                CreateBombBlock(block);
+                FindAllNeighbours();
             }
-     
-            //GridManager.Instance.UpdateFreeNodes();
-            Debug.Log("Bloklar patlatıldı : boş hücre sayısı : " + GridManager.freeNodes.Count);
-            FindAllNeighbours();
+            else if(block is BombBlock)
+            {
+                foreach (var bombBlock in group)
+                {
+                    if (bombBlock.blockType == handler.targetBlockType)
+                        handler.UpdateTarget(bombBlock, 1);
+
+                    if(bombBlock!=block && bombBlock is BombBlock)
+                    {
+                        var bombBlockGroup = bombBlock.DetermineGroup();
+                        BlastBlocks(bombBlockGroup);
+                    }
+                }
+            }
 
             GameManager.Instance.ChangeState(GameState.Falling);
         }
-        block.Shake(0.3f, 0.1f); // Wrong Move
+        block.Shake(0.3f, 0.1f);
         ObjectPool.Instance.PlaySound(5);
+    }
 
+    private void CreateBombBlock(Block aBlock)
+    {
+        var bombBlock = Instantiate(bomb, aBlock.node.Pos, Quaternion.identity);
+        Block b = bombBlock.GetComponent<Block>();
+        blocks.Add(b);
+        b.SetBlock(aBlock.node);
     }
 
     private void BlastBlocks(HashSet<Block> aBlockGroup)
@@ -155,9 +169,7 @@ public class BlockManager : MonoBehaviour
             if (b.node != null)
             {
                 Debug.Log("a");
-                GridManager.freeNodes.Add(b.node); // Boşalan düğümü freeNodes'a ekle
-                //b.node.ResetNode();
-                //Debug.Log(GameManager.Instance._state);
+                GridManager.freeNodes.Add(b.node);
                 blastedBlocks.Add(b);
                 OnBlockBlasted?.Invoke(b);
                 //BlockType.Instance.RemoveBlock(b.blockType, b.node.gridPosition);

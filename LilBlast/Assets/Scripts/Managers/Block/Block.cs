@@ -11,7 +11,7 @@ public abstract class Block : MonoBehaviour
     public bool isBlastable = false;
     public List<Block> group = new List<Block>();
     public int blockType;
-    private new BoxCollider2D collider;
+    private BoxCollider2D collider;
     private bool isShaking;
  
     private Vector2 originalPosition;

@@ -1,23 +1,23 @@
 # ninja log v5
-2	809	1738512567710919824	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	92767d2b971584d2
-3	722	1738512567623662039	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	4bf77842284f48c0
-1	719	1738512567618726260	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	bdf146944117e082
-3	662	1738512567562136900	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	39bde8aa02c7f98d
-3	556	1738512567456368411	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	50f4932966f9c4fd
-1	625	1738512567524804909	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	f9c4f48af9d6e1fd
-2	621	1738512567521255751	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	4fbac823dc687469
-809	896	1738512567794668242	/Users/lil/Desktop/Games/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/37913u6i/obj/arm64-v8a/libgame.so	b3c305dcf926e76b
-1	804	1738512567704764506	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	a7682e724d6ce727
-182	353	1738512567239278363	/Users/lil/Desktop/Games/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/37913u6i/obj/arm64-v8a/libswappywrapper.so	69770ee113cce799
-4	182	1738512567080433672	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	7a4ab435145fb580
 12	446	1738846768181136722	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	7a4ab435145fb580
 447	674	1738846768408922795	/Users/lil/Desktop/Games/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/37913u6i/obj/arm64-v8a/libswappywrapper.so	69770ee113cce799
-9	897	1738846768632086234	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	bdf146944117e082
-10	1004	1738846768739659295	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	50f4932966f9c4fd
-9	1038	1738846768774588170	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	4fbac823dc687469
-9	1065	1738846768801645184	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	f9c4f48af9d6e1fd
-10	1065	1738846768800601358	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	39bde8aa02c7f98d
-11	1075	1738846768811824027	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	4bf77842284f48c0
-9	1270	1738846769005603511	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	92767d2b971584d2
 8	1326	1738846769061537526	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	a7682e724d6ce727
 1326	1423	1738846769156990132	/Users/lil/Desktop/Games/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/37913u6i/obj/arm64-v8a/libgame.so	b3c305dcf926e76b
+9	1038	1738846768774588170	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	4fbac823dc687469
+9	1065	1738846768801645184	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	f9c4f48af9d6e1fd
+10	1004	1738846768739659295	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	50f4932966f9c4fd
+10	1065	1738846768800601358	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	39bde8aa02c7f98d
+9	897	1738846768632086234	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	bdf146944117e082
+11	1075	1738846768811824027	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	4bf77842284f48c0
+9	1270	1738846769005603511	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	92767d2b971584d2
+8	366	1739826705001713344	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	7a4ab435145fb580
+366	599	1739826705231856991	/Users/lil/Desktop/Games/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/37913u6i/obj/arm64-v8a/libswappywrapper.so	69770ee113cce799
+7	876	1739826705509257664	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	4bf77842284f48c0
+4	923	1739826705558175619	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	4fbac823dc687469
+6	923	1739826705557213302	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	50f4932966f9c4fd
+3	960	1739826705595559688	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	f9c4f48af9d6e1fd
+6	969	1739826705604434036	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	39bde8aa02c7f98d
+3	1041	1739826705675701109	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	bdf146944117e082
+5	1210	1739826705844729926	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	92767d2b971584d2
+3	1251	1739826705885968846	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	a7682e724d6ce727
+1251	1356	1739826705988447801	/Users/lil/Desktop/Games/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/37913u6i/obj/arm64-v8a/libgame.so	b3c305dcf926e76b

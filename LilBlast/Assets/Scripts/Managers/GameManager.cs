@@ -20,8 +20,8 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        //Application.targetFrameRate = 60; // FPS'i 60'a sabitle
-        //QualitySettings.vSyncCount = 0;   // VSync'i kapat
+        Application.targetFrameRate = 60; // FPS'i 60'a sabitle
+        QualitySettings.vSyncCount = 0;   // VSync'i kapat
         shuffle = GetComponentInChildren<ShuffleManager>();
 
         Instance = this;
