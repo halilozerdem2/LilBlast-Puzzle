@@ -26,7 +26,7 @@ public class BlockShapeShifter : MonoBehaviour
 
     public void DetermineIcon()
     {
-        HashSet<Block> group = block.FloodFill();
+        HashSet<Block> group = block.DetermineGroup();
         if (group.Count < 2)
         {
             currentIcon.sprite = IconTypes[0];

@@ -1144,7 +1144,7 @@ MonoBehaviour:
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
   m_Cameras: []
-  m_RendererIndex: -1
+  m_RendererIndex: 0
   m_VolumeLayerMask:
     serializedVersion: 2
     m_Bits: 1
@@ -3392,14 +3392,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   blockTypes:
-  - {fileID: 7227639219560338211, guid: f6fed28195f7948a58326dbf02721526, type: 3}
-  - {fileID: 4369013734234325836, guid: c8fe9262e59c64122b4a7727326e8bab, type: 3}
-  - {fileID: -5895060408168343372, guid: 699255edc357647359d756139bac7ba3, type: 3}
-  - {fileID: -5616091948119221040, guid: 2bda851c67d664611be2044a3a1c655f, type: 3}
-  - {fileID: 6117569212860040427, guid: e29d17fbbf32f444ab01ac13b0e25818, type: 3}
-  _blocks: []
+  - {fileID: 6403762527782132564, guid: f6fed28195f7948a58326dbf02721526, type: 3}
+  - {fileID: 4320159466782383412, guid: c8fe9262e59c64122b4a7727326e8bab, type: 3}
+  - {fileID: 9141069200078575671, guid: 699255edc357647359d756139bac7ba3, type: 3}
+  - {fileID: 6146372119741061691, guid: 2bda851c67d664611be2044a3a1c655f, type: 3}
+  - {fileID: 865468698075168659, guid: e29d17fbbf32f444ab01ac13b0e25818, type: 3}
+  blocks: []
   blastedBlocks: []
+  regularBlocks: []
   handler: {fileID: 722017278}
+  bomb: {fileID: 7313523251230437707, guid: aa09ed31aeb324f12b4887a2218d4da1, type: 3}
 --- !u!114 &1113759988
 MonoBehaviour:
   m_ObjectHideFlags: 0

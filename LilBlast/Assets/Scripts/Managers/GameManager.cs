@@ -14,12 +14,14 @@ public class GameManager : MonoBehaviour
     [SerializeField] ShuffleManager shuffle;
     [SerializeField] CanvasManager canvas;
     [SerializeField] GameOverHandler handler;
+
+   
     public GameState _state;
 
     private void Awake()
     {
-        Application.targetFrameRate = 60; // FPS'i 60'a sabitle
-        QualitySettings.vSyncCount = 0;   // VSync'i kapat
+        //Application.targetFrameRate = 60; // FPS'i 60'a sabitle
+        //QualitySettings.vSyncCount = 0;   // VSync'i kapat
         shuffle = GetComponentInChildren<ShuffleManager>();
 
         Instance = this;
@@ -32,6 +34,8 @@ public class GameManager : MonoBehaviour
 
     public void ChangeState(GameState newState)
     {
+        if(_state==newState) return;
+        
         Debug.Log("State changing from " + _state + " to " + newState);
         _state = newState;
 
@@ -43,12 +47,10 @@ public class GameManager : MonoBehaviour
                 break;
                 
             case GameState.Play:
-               // AudioManager.Instance.StopMusic();
 
                 AudioManager.Instance.PlayGameSceneMusic();
                 handler.AssignTarget();
                 GridManager.Instance.GenerateGrid();
-                //ChangeState(GameState.SpawningBlocks);
                 break;
 
             case GameState.SpawningBlocks:
@@ -56,6 +58,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.WaitingInput:
+                BlockManager.Instance.FindAllNeighbours();
                 OnGridReady?.Invoke();
                 break;
 
@@ -65,8 +68,9 @@ public class GameManager : MonoBehaviour
                 GridManager.Instance.UpdateGrid();
                 break;
 
-            case GameState.Deadlock:
+            case GameState.Shuffling:
                 shuffle.HandleShuffle();
+                OnGridReady?.Invoke();
                 break;
 
             case GameState.Win:
@@ -89,7 +93,7 @@ public class GameManager : MonoBehaviour
     public void Reset()
     {
         // Grid ve blokları temizle
-        foreach (var block in BlockManager.Instance._blocks)
+        foreach (var block in BlockManager.Instance.blocks)
         {
             Destroy(block.gameObject);
         }
@@ -98,7 +102,7 @@ public class GameManager : MonoBehaviour
             Destroy(node);
         }
 
-        BlockManager.Instance._blocks.Clear();
+        BlockManager.Instance.blocks.Clear();
         GridManager.freeNodes.Clear();
         GridManager.Instance._nodes.Clear();
         handler.collectedBlocks.Clear();
@@ -116,7 +120,7 @@ public class GameManager : MonoBehaviour
         WaitingInput,
         Blasting,
         Falling,
-        Deadlock,
+        Shuffling,
         Win,
         Lose,
     }

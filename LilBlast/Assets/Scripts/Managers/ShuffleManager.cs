@@ -1,4 +1,5 @@
 using DG.Tweening;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using static GameManager;
@@ -11,19 +12,16 @@ public class ShuffleManager : MonoBehaviour
 
     public void HandleShuffle()
     {
-        //.Log("Shuffle Başladı  |:blok sayısı : " + BlockManager.Instance._blocks.Count);
-        //GridManager.freeNodes.Clear();
+        Instance.ChangeState(GameState.Shuffling);
         foreach (var node in GridManager.Instance._nodes.Values)
         {
             GridManager.freeNodes.Add(node);
             node.OccupiedBlock = null;
 
         }
-        //Debug.Log("Grid boşaltıldı |: boş hücre sayısı : " + GridManager.freeNodes.Count);
 
-        //GridManager.Instance.UpdateFreeNodes(); // Güncellenmiş boş node listesini al
         availableNodes = new List<Node>(GridManager.Instance._nodes.Values); // Shuffle için boş düğümleri listeye al
-        blocks = new List<Block>(BlockManager.Instance._blocks);
+        blocks = new List<Block>(BlockManager.Instance.blocks);
 
         if (availableNodes.Count < blocks.Count)
         {
@@ -31,7 +29,7 @@ public class ShuffleManager : MonoBehaviour
             return;
         }
             Debug.Log(availableNodes.Count);
-
+        
         foreach (var block in blocks)
         {
             block.Shake(0.2f, 0.1f);
@@ -44,21 +42,21 @@ public class ShuffleManager : MonoBehaviour
             }
 
             block.SetBlock(targetNode);
-            //Debug.Log("grid pozisyonu : "  + targetNode.gridPosition+"Blok : " +targetNode.OccupiedBlock);
             GridManager.freeNodes.Remove(targetNode);// Seçilen node artık dolu olduğu için listeden çıkar
-            //Debug.Log("grid doluyor |: boş hücre sayısı : " + GridManager.freeNodes.Count);
-            block.transform.DOMove(targetNode.Pos, 1f).SetEase(Ease.InOutQuad)
-             .OnComplete(() => {
-                 Instance.ChangeState(GameState.WaitingInput);
-             }); ; ;
-
-
+            block.transform.DOMove(targetNode.Pos, 1.2f).SetEase(Ease.InOutQuad);
             availableNodes.Remove(targetNode);
             
         }
-        GridManager.Instance.UpdateOccupiedBlock();
-        BlockManager.Instance.FindAllNeighbours();
 
+        GridManager.Instance.UpdateOccupiedBlock();
+        StartCoroutine(HandleStateDelayed());
+
+    }
+
+    IEnumerator HandleStateDelayed()
+    {
+        yield return new WaitForSeconds(1.21f);
+        Instance.ChangeState(GameState.WaitingInput);
     }
 
     private Node AssignNewPosition(int type, List<Node> availableNodes)
@@ -66,7 +64,7 @@ public class ShuffleManager : MonoBehaviour
         float percentage = Random.Range(0f, 1f);
         Node newNode = null;
 
-        if (percentage >= .2f) // %70 tamamen rastgele
+        if (percentage > .3f) // %70 tamamen rastgele
         {
             // Fisher-Yates Shuffle uygulanarak rastgele seçme
             int n = availableNodes.Count;
@@ -78,7 +76,7 @@ public class ShuffleManager : MonoBehaviour
 
             newNode = availableNodes[0]; // Fisher-Yates ile karıştırılan ilk düğümü seç
         }
-        else if(percentage>=.1f) // %10 belirlenen sütuna atama
+        else if(percentage>=0.15f && percentage<=.3f) // sütuna atama
         {
             int selectedColumn = BlockType.Instance.SelectColumn(type);
             List<Node> columnNodes = availableNodes.FindAll(n => n.gridPosition.x == selectedColumn);
@@ -88,7 +86,7 @@ public class ShuffleManager : MonoBehaviour
                 newNode = columnNodes[Random.Range(0, columnNodes.Count)];
             }
         }
-        else
+        else // Satıra atama
         {
             int selectedRow = BlockType.Instance.SelectRow(type);
             List<Node> rowNodes = availableNodes.FindAll(n => n.gridPosition.y == selectedRow);

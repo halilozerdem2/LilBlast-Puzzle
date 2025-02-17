@@ -1,6 +1,7 @@
 using DG.Tweening;
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -13,21 +14,25 @@ public class BlockManager : MonoBehaviour
     public static event Action<Block> OnBlockBlasted;
 
     [SerializeField] private Block[] blockTypes;
-    public List<Block> _blocks;
+
+    public List<Block> blocks;
     public List<Block> blastedBlocks;
+    public List<RegularBlock> regularBlocks;
 
     public GameOverHandler handler;
 
-    int minBlastableBlockGroupSize = 2;
+    public GameObject bomb;
+
+    private int minBlastableBlockGroupSize = 2;
 
     private void Awake()
     {
         Instance = this;
-        _blocks = new List<Block>();
+        blocks = new List<Block>();
         blastedBlocks = new List<Block>();
+        regularBlocks=new List<RegularBlock>();
 
     }
-
     public void SpawnBlocks()
     {
         //if (GameManager.Instance._state != GameState.SpawningBlocks) return;
@@ -41,7 +46,7 @@ public class BlockManager : MonoBehaviour
             int randomIndex = Random.Range(0, blockTypes.Length);
             
             float spawnAccuricyPercentage = Random.Range(0f, 1f);
-            if (spawnAccuricyPercentage <= 0.25f)
+            if (spawnAccuricyPercentage <= 0.15f)
                 spawnIndex = targetBlockType;
             else
                 spawnIndex = randomIndex;
@@ -50,34 +55,39 @@ public class BlockManager : MonoBehaviour
 
             Vector3 spawnPos = new Vector3(node.Pos.x, GridManager.Instance._height + 1, 0);
             Block randomBlock = Instantiate(blockTypes[spawnIndex], spawnPos, Quaternion.identity);
-
+            //Block randomBlock =  ObjectPool.Instance.GetBlockFromPool(spawnIndex, spawnPos, Quaternion.identity);
             counter++;
             randomBlock.SetBlock(node);
-            _blocks.Add(randomBlock);
+            blocks.Add(randomBlock);
+            regularBlocks.Add(randomBlock as RegularBlock);
 
 
-            randomBlock.transform.DOMove(node.Pos, 0.3f).SetEase(Ease.OutBounce)
-            .OnComplete(() => {
-                if (HasValidMoves())
-                    GameManager.Instance.ChangeState(GameState.WaitingInput);
-                else
-                    GameManager.Instance.ChangeState(GameState.Deadlock);
-            }); ;
-            //Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
+            randomBlock.transform.DOMove(node.Pos, 0.3f).SetEase(Ease.OutBounce);
+            Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
         }
-       // Debug.Log("Block spawnland |: boş hücre sayısı : " + GridManager.freeNodes.Count);
-        FindAllNeighbours();
-
+        StartCoroutine(CheckValidMoves());
         
+        //FindAllNeighbours();
+
+    }
+
+    IEnumerator CheckValidMoves()
+    {
+        yield return new WaitForSeconds(0.31f);
+        Debug.Log("Block spawnland |: boş hücre sayısı : " + GridManager.freeNodes.Count);
+        if (HasValidMoves())
+            GameManager.Instance.ChangeState(GameState.WaitingInput);
+        else
+            GameManager.Instance.ChangeState(GameState.Shuffling);
     }
 
     public void FindAllNeighbours()
     {
-        foreach (var block in _blocks)
+        foreach (var block in regularBlocks)
         {
             if (block != null)
             {
-                block.FindNeighbours(GridManager.Instance._nodes.Values.ToList());
+                block.FindNeighbours();
             }
         }
     }
@@ -109,19 +119,26 @@ public class BlockManager : MonoBehaviour
     public void TryBlastBlock(Block block)
     {
         if (GameManager.Instance._state != GameState.WaitingInput) return;
-        HashSet<Block> group = block.FloodFill();
+
+        HashSet<Block> group = block.DetermineGroup();
         if (group.Count >= minBlastableBlockGroupSize)
         {
+
             handler.UpdateTarget(block, group.Count);
 
             GameManager.Instance.ChangeState(GameState.Blasting);
             BlastBlocks(group);
             handler.DecreaseMove();
             //if (GameManager.Instance._state != GameManager.GameState.WaitingInput) return;
-
+            if (group.Count >= 4)
+            {
+                var bombBlock=Instantiate(bomb, block.node.Pos, Quaternion.identity);
+                Block b = bombBlock.GetComponent<Block>();
+                b.SetBlock(block.node);
+            }
      
             //GridManager.Instance.UpdateFreeNodes();
-           // Debug.Log("Bloklar patlatıldı : boş hücre sayısı : " + GridManager.freeNodes.Count);
+            Debug.Log("Bloklar patlatıldı : boş hücre sayısı : " + GridManager.freeNodes.Count);
             FindAllNeighbours();
 
             GameManager.Instance.ChangeState(GameState.Falling);
@@ -137,18 +154,24 @@ public class BlockManager : MonoBehaviour
         {
             if (b.node != null)
             {
+                Debug.Log("a");
+                GridManager.freeNodes.Add(b.node); // Boşalan düğümü freeNodes'a ekle
+                //b.node.ResetNode();
                 //Debug.Log(GameManager.Instance._state);
                 blastedBlocks.Add(b);
                 OnBlockBlasted?.Invoke(b);
                 //BlockType.Instance.RemoveBlock(b.blockType, b.node.gridPosition);
-                GridManager.freeNodes.Add(b.node); // Boşalan düğümü freeNodes'a ekle
+                blocks.Remove(b);
+                regularBlocks.Remove(b as RegularBlock);
                 b.node.OccupiedBlock = null;
-                _blocks.Remove(b);
+
             }
+
             Destroy(b.gameObject);
             //ObjectPool.Instance.ReturnToBlockPool(b.blockType, b.gameObject);
             ObjectPool.Instance.GetParticleFromPool(b.blockType, b.node.Pos, Quaternion.identity);
         }
     }
+
 }
 

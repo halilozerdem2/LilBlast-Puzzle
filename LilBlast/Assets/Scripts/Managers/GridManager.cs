@@ -109,7 +109,6 @@ public class GridManager : MonoBehaviour
     }
 
 
-
     public void UpdateFreeNodes()
     {
         freeNodes.Clear();
@@ -138,7 +137,7 @@ public class GridManager : MonoBehaviour
         {
             if (node.OccupiedBlock == null) // Sadece boş düğümler kontrol edilecek
             {
-                foreach (var block in BlockManager.Instance._blocks)
+                foreach (var block in BlockManager.Instance.blocks)
                 {
                     if (block.node == node) // Eğer blok bu düğüme aitse
                     {

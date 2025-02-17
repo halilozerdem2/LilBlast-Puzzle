@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1381730459317035196}
   - component: {fileID: 7029933813660145975}
-  - component: {fileID: 4369013734234325836}
   - component: {fileID: 8545986839491517182}
   - component: {fileID: 2480466905403686443}
+  - component: {fileID: 4320159466782383412}
   m_Layer: 0
   m_Name: Green_Default_0
   m_TagString: Untagged
@@ -90,23 +90,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &4369013734234325836
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7275275954777256305}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 734ddc900c55d4fe0bb253acec876816, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  node: {fileID: 0}
-  isBlastable: 0
-  neighboursCount: 0
-  blockType: 1
-  neighbours: []
 --- !u!61 &8545986839491517182
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -170,3 +153,21 @@ MonoBehaviour:
   - {fileID: 3291406690555587084, guid: 1451686f7947242a0917ca4d3d2989b3, type: 3}
   - {fileID: -2176861220364285743, guid: 3425de220fcb6459f9842ef6084e1dc8, type: 3}
   - {fileID: 6787462199040882907, guid: dbd284c3f95684be1bf48e773e161e15, type: 3}
+--- !u!114 &4320159466782383412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7275275954777256305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6134789ef03944199930b641115f8cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  node: {fileID: 0}
+  isBlastable: 0
+  group: []
+  blockType: 1
+  neighbours: []
+  neighboursCount: 0
