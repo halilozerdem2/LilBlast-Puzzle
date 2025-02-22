@@ -28,6 +28,7 @@ public class CanvasManager : MonoBehaviour
     }
     public void Pause()
     {
+        GameManager.Instance.ChangeState(GameManager.GameState.Pause);
         DeactivateAllPanels();
         pausePanel.SetActive(true);
         Time.timeScale = 0f;

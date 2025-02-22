@@ -22,21 +22,19 @@ public class GameManager : MonoBehaviour
     {
         Application.targetFrameRate = 60; // FPS'i 60'a sabitle
         QualitySettings.vSyncCount = 0;   // VSync'i kapat
-        shuffle = GetComponentInChildren<ShuffleManager>();
-
         Instance = this;
     }
 
     private void Start()
     {
-        ChangeState(GameState.Menu);
+        canvas.ActivateMainMenu();
     }
 
     public void ChangeState(GameState newState)
     {
         if(_state==newState) return;
         
-        Debug.Log("State changing from " + _state + " to " + newState);
+        //Debug.Log("State changing from " + _state + " to " + newState);
         _state = newState;
 
         switch (newState)
@@ -47,7 +45,6 @@ public class GameManager : MonoBehaviour
                 break;
                 
             case GameState.Play:
-
                 AudioManager.Instance.PlayGameSceneMusic();
                 handler.AssignTarget();
                 GridManager.Instance.GenerateGrid();
@@ -64,10 +61,12 @@ public class GameManager : MonoBehaviour
 
             case GameState.Blasting:
                 break;
+
             case GameState.Falling:
                 GridManager.Instance.UpdateGrid();
                 break;
-
+            case GameState.Pause:
+                break;
             case GameState.Shuffling:
                 shuffle.HandleShuffle();
                 OnGridReady?.Invoke();
@@ -115,6 +114,7 @@ public class GameManager : MonoBehaviour
     public enum GameState
     {
         Menu,
+        Pause,
         Play,
         SpawningBlocks,
         WaitingInput,

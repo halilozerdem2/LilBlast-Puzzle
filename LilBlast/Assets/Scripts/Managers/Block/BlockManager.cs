@@ -18,10 +18,11 @@ public class BlockManager : MonoBehaviour
     public List<Block> blocks;
     public List<Block> blastedBlocks;
     public List<RegularBlock> regularBlocks;
+    public Queue<Block> specialBlocks;
 
     public GameOverHandler handler;
 
-    public GameObject bomb;
+    public GameObject bomb ,vRocket, hRocket;
 
     private int minBlastableBlockGroupSize = 2;
 
@@ -29,6 +30,7 @@ public class BlockManager : MonoBehaviour
     {
         Instance = this;
         blocks = new List<Block>();
+        specialBlocks = new Queue<Block>();
         blastedBlocks = new List<Block>();
         regularBlocks=new List<RegularBlock>();
 
@@ -63,7 +65,7 @@ public class BlockManager : MonoBehaviour
 
 
             randomBlock.transform.DOMove(node.Pos, 0.3f).SetEase(Ease.OutBounce);
-            Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
+           // Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
         }
         StartCoroutine(CheckValidMoves());
         
@@ -74,7 +76,7 @@ public class BlockManager : MonoBehaviour
     IEnumerator CheckValidMoves()
     {
         yield return new WaitForSeconds(0.31f);
-        Debug.Log("Block spawnland |: boş hücre sayısı : " + GridManager.freeNodes.Count);
+       // Debug.Log("Block spawnland |: boş hücre sayısı : " + GridManager.freeNodes.Count);
         if (HasValidMoves())
             GameManager.Instance.ChangeState(GameState.WaitingInput);
         else
@@ -120,7 +122,7 @@ public class BlockManager : MonoBehaviour
     {
         if (GameManager.Instance._state != GameState.WaitingInput) return;
         HashSet<Block> group = block.DetermineGroup();
-      
+
         if (group.Count >= minBlastableBlockGroupSize)
         {
             handler.DecreaseMove();
@@ -128,24 +130,32 @@ public class BlockManager : MonoBehaviour
             GameManager.Instance.ChangeState(GameState.Blasting);
             BlastBlocks(group);
 
-            if(block is RegularBlock && group.Count==4)
+            // Eğer patlayan blok RegularBlock ise, grup büyüklüğüne göre özel blok oluşturuluyor
+            if (block is RegularBlock)
             {
-                CreateBombBlock(block);
-                FindAllNeighbours();
-            }
-            else if(block is BombBlock)
-            {
-                foreach (var bombBlock in group)
+                switch (group.Count)
                 {
-                    if (bombBlock.blockType == handler.targetBlockType)
-                        handler.UpdateTarget(bombBlock, 1);
-
-                    if(bombBlock!=block && bombBlock is BombBlock)
-                    {
-                        var bombBlockGroup = bombBlock.DetermineGroup();
-                        BlastBlocks(bombBlockGroup);
-                    }
+                    case 3: CreateSpecialBlock(vRocket, block.node); break;
+                    case 4: CreateSpecialBlock(bomb, block.node); break;
+                    case 5: CreateSpecialBlock(hRocket, block.node); break;
                 }
+            }
+            else
+            {
+                foreach (var b in group)
+                {
+                    if (b.blockType == handler.targetBlockType)
+                        handler.UpdateTarget(b, 1);
+                    if (b != block)
+                        specialBlocks.Enqueue(b);
+                }
+            }
+            while (specialBlocks.Count > 0)
+            {
+                
+                var specialBlock = specialBlocks.Dequeue();
+                Debug.Log("grup içerisindeki özel blok : " + specialBlock);
+                TryBlastBlock(specialBlock);
             }
 
             GameManager.Instance.ChangeState(GameState.Falling);
@@ -154,13 +164,14 @@ public class BlockManager : MonoBehaviour
         ObjectPool.Instance.PlaySound(5);
     }
 
-    private void CreateBombBlock(Block aBlock)
+    private void CreateSpecialBlock(GameObject specialBlock, Node aNode)
     {
-        var bombBlock = Instantiate(bomb, aBlock.node.Pos, Quaternion.identity);
-        Block b = bombBlock.GetComponent<Block>();
+        var specialBlockObject = Instantiate(specialBlock, aNode.Pos, Quaternion.identity);
+        Block b = specialBlockObject.GetComponent<Block>();
+        b.SetBlock(aNode);
         blocks.Add(b);
-        b.SetBlock(aBlock.node);
     }
+
 
     private void BlastBlocks(HashSet<Block> aBlockGroup)
     {
@@ -168,13 +179,16 @@ public class BlockManager : MonoBehaviour
         {
             if (b.node != null)
             {
-                Debug.Log("a");
                 GridManager.freeNodes.Add(b.node);
                 blastedBlocks.Add(b);
                 OnBlockBlasted?.Invoke(b);
-                //BlockType.Instance.RemoveBlock(b.blockType, b.node.gridPosition);
                 blocks.Remove(b);
-                regularBlocks.Remove(b as RegularBlock);
+
+                if (b is RegularBlock)
+                    regularBlocks.Remove(b as RegularBlock);
+                else
+                    specialBlocks.Enqueue(b);
+
                 b.node.OccupiedBlock = null;
 
             }

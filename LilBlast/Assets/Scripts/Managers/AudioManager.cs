@@ -12,19 +12,16 @@ public class AudioManager : MonoBehaviour
 
     void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         Instance = this;
-        DontDestroyOnLoad(gameObject);
 
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.loop = false;
         audioSource.playOnAwake = false;
         audioSource.Stop();
+    }
+    private void Start()
+    {
+        PlayMainMenuMusic();
     }
 
     void Update()
