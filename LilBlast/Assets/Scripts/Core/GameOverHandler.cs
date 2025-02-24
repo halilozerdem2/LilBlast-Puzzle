@@ -30,7 +30,7 @@ public class GameOverHandler : MonoBehaviour
         targetBlockType = Random.Range(0, blockIcons.Length);
         targetBlockCount = Random.Range(120, 140);
         currentTarget = targetBlockCount;
-        moves = Random.Range(50, 75);
+        moves = Random.Range(20, 30);
         UpdateUI();
     }
 
@@ -87,6 +87,6 @@ public class GameOverHandler : MonoBehaviour
             currentTarget -= a;
         }
         UpdateUI();
-        //blastedGroupSize = 0;
     }
 }
+ 

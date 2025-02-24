@@ -64,7 +64,7 @@ public class BlockManager : MonoBehaviour
             regularBlocks.Add(randomBlock as RegularBlock);
 
 
-            randomBlock.transform.DOMove(node.Pos, 0.3f).SetEase(Ease.OutBounce);
+            randomBlock.transform.DOMove(node.Pos, 0.5f).SetEase(Ease.OutBounce);
            // Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
         }
         StartCoroutine(CheckValidMoves());

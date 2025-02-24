@@ -41,7 +41,7 @@ public class GridManager : MonoBehaviour
 
     var center = new Vector2((float)_width / 2 - 0.5f, (float)_height / 2 - 0.5f);
     var board = Instantiate(_boardPrefab, center, Quaternion.identity);
-    board.transform.localScale = new Vector3(_width, _height, 1);
+    board.transform.localScale = new Vector3(_width+0.2f, _height+0.2f, 1);
         CenterCamera(center);
     
 }
@@ -95,7 +95,7 @@ public class GridManager : MonoBehaviour
                     freeNodes.Remove(emptyNode);
 
                     blockToMove.SetBlock(emptyNode);
-                    blockToMove.transform.DOMove(emptyNode.Pos, 0.3f).SetEase(Ease.OutBounce)
+                    blockToMove.transform.DOMove(emptyNode.Pos, 0.4f).SetEase(Ease.OutBounce)
                         .OnComplete(() => {
                             GameManager.Instance.ChangeState(GameState.SpawningBlocks);
                         }); ;
