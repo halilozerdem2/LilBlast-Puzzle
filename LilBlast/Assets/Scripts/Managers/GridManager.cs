@@ -41,7 +41,7 @@ public class GridManager : MonoBehaviour
 
     var center = new Vector2((float)_width / 2 - 0.5f, (float)_height / 2 - 0.5f);
     var board = Instantiate(_boardPrefab, center, Quaternion.identity);
-    board.transform.localScale = new Vector3(_width+0.2f, _height+0.2f, 1);
+    board.transform.localScale = new Vector3(_width+0.25f, _height+0.25f, 1);
         CenterCamera(center);
     
 }
@@ -114,19 +114,12 @@ public class GridManager : MonoBehaviour
         freeNodes.Clear();
         foreach (var node in _nodes.Values)
         {
-            if(node.OccupiedBlock==null)
-
             if (node.OccupiedBlock == null)
             {
                 freeNodes.Add(node);
                 node.OccupiedBlock.SetBlock(node);
+            }
 
-               //Debug.Log("HATA: Node " + node.gridPosition + " boş olarak kaydedildi!");
-            }
-            else
-            {
-                //Debug.LogError("Node " + node.gridPosition + " dolu, Block: " + node.OccupiedBlock.name);
-            }
         }
     }
 

@@ -123,43 +123,36 @@ public class BlockManager : MonoBehaviour
         if (GameManager.Instance._state != GameState.WaitingInput) return;
         HashSet<Block> group = block.DetermineGroup();
 
-        if (group.Count >= minBlastableBlockGroupSize)
+        if(block is RegularBlock)
         {
-            handler.DecreaseMove();
-            handler.UpdateTarget(block, group.Count);
-            GameManager.Instance.ChangeState(GameState.Blasting);
-            BlastBlocks(group);
-
-            // Eğer patlayan blok RegularBlock ise, grup büyüklüğüne göre özel blok oluşturuluyor
-            if (block is RegularBlock)
+            if (group.Count >= minBlastableBlockGroupSize)
             {
-                switch (group.Count)
-                {
+                handler.DecreaseMove();
+                handler.UpdateTarget(block, group.Count);
+                GameManager.Instance.ChangeState(GameState.Blasting);
+                BlastBlocks(group);
+
+                 switch (group.Count)
+                 {
                     case 3: CreateSpecialBlock(vRocket, block.node); break;
                     case 4: CreateSpecialBlock(bomb, block.node); break;
                     case 5: CreateSpecialBlock(hRocket, block.node); break;
-                }
+                 }
             }
-            else
-            {
-                foreach (var b in group)
-                {
-                    if (b.blockType == handler.targetBlockType)
-                        handler.UpdateTarget(b, 1);
-                    if (b != block)
-                        specialBlocks.Enqueue(b);
-                }
-            }
-            while (specialBlocks.Count > 0)
-            {
-                
-                var specialBlock = specialBlocks.Dequeue();
-                Debug.Log("grup içerisindeki özel blok : " + specialBlock);
-                TryBlastBlock(specialBlock);
-            }
-
-            GameManager.Instance.ChangeState(GameState.Falling);
         }
+        else
+        {
+            handler.DecreaseMove();
+            foreach (var b in group)
+            {
+                if (b != block)
+                    specialBlocks.Enqueue(b);
+                if (b.blockType == handler.targetBlockType)
+                    handler.UpdateTarget(b, 1);
+            }
+            BlastBlocks(group);
+        }
+        GameManager.Instance.ChangeState(GameState.Falling);
         block.Shake(0.3f, 0.1f);
         ObjectPool.Instance.PlaySound(5);
     }
@@ -179,25 +172,76 @@ public class BlockManager : MonoBehaviour
         {
             if (b.node != null)
             {
-                GridManager.freeNodes.Add(b.node);
-                blastedBlocks.Add(b);
-                OnBlockBlasted?.Invoke(b);
-                blocks.Remove(b);
-
-                if (b is RegularBlock)
+                if(b is RegularBlock)
+                {
+                    BlastBlock(b);
                     regularBlocks.Remove(b as RegularBlock);
+                }
                 else
+                {
                     specialBlocks.Enqueue(b);
+                    Debug.Log(b);
+                }
+            }   
+        }
 
-                b.node.OccupiedBlock = null;
+        BlastSpecialBlocks();
+    }
 
+
+    private void BlastSpecialBlocks()
+    {
+        while (specialBlocks.Count > 0)
+        {
+            HashSet<Block> blockGroup = specialBlocks.Dequeue().DetermineGroup();
+
+            foreach (var item in blockGroup)
+            {
+                if (item is RegularBlock)
+                    regularBlocks.Remove(item as RegularBlock);
+                else
+                {
+                    if (item != blockGroup.First())
+                        specialBlocks.Enqueue(item);
+                }
+
+                BlastBlock(item);
             }
-
-            Destroy(b.gameObject);
-            //ObjectPool.Instance.ReturnToBlockPool(b.blockType, b.gameObject);
-            ObjectPool.Instance.GetParticleFromPool(b.blockType, b.node.Pos, Quaternion.identity);
         }
     }
+
+
+    private void BlastBlock(Block b)
+    {
+        GridManager.freeNodes.Add(b.node);
+        blastedBlocks.Add(b);
+        b.node.OccupiedBlock = null;
+        OnBlockBlasted?.Invoke(b);
+        blocks.Remove(b);
+        Destroy(b.gameObject);
+        //ObjectPool.Instance.ReturnToBlockPool(b.blockType, b.gameObject);
+        ObjectPool.Instance.GetParticleFromPool(b.blockType, b.node.Pos, Quaternion.identity);
+
+    }
+
+    private IEnumerator MoveUpAndDestroy(Block b)
+    {
+        float duration = 0.5f;
+        float elapsed = 0f;
+
+        Vector3 startPos = b.transform.position;
+        Vector3 targetPos = startPos + new Vector3(0, 0.5f, 0); // Blok yukarı çıkacak
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            b.transform.position = Vector3.Lerp(startPos, targetPos, elapsed / duration);
+            yield return null;
+        }
+
+        Destroy(b.gameObject);
+    }
+
 
 }
 

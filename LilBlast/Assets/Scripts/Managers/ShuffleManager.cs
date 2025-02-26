@@ -17,7 +17,6 @@ public class ShuffleManager : MonoBehaviour
         {
             GridManager.freeNodes.Add(node);
             node.OccupiedBlock = null;
-
         }
 
         availableNodes = new List<Node>(GridManager.Instance._nodes.Values); // Shuffle için boş düğümleri listeye al

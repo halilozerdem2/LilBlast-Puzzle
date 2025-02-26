@@ -11,14 +11,14 @@ public abstract class Block : MonoBehaviour
     public bool isBlastable = false;
     public List<Block> group = new List<Block>();
     public int blockType;
-    private BoxCollider2D collider;
+    private BoxCollider2D boxCollider2D;
     private bool isShaking;
  
     private Vector2 originalPosition;
 
     private void Awake()
     {
-        collider = GetComponent<BoxCollider2D>();
+        boxCollider2D = GetComponent<BoxCollider2D>();
     }
 
     public void SetBlock(Node aNode)
@@ -86,6 +86,6 @@ public abstract class Block : MonoBehaviour
 
     public void SetBlocksInteractable(bool interactable)
     {
-        collider.enabled = interactable;
+        boxCollider2D.enabled = interactable;
     }
 }
