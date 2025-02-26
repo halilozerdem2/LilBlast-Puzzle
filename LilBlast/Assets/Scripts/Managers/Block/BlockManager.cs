@@ -122,7 +122,6 @@ public class BlockManager : MonoBehaviour
     {
         if (GameManager.Instance._state != GameState.WaitingInput) return;
         HashSet<Block> group = block.DetermineGroup();
-
         if(block is RegularBlock)
         {
             if (group.Count >= minBlastableBlockGroupSize)
@@ -142,14 +141,13 @@ public class BlockManager : MonoBehaviour
         }
         else
         {
-            handler.DecreaseMove();
+            specialBlocks.Clear();
             foreach (var b in group)
             {
-                if (b != block)
-                    specialBlocks.Enqueue(b);
                 if (b.blockType == handler.targetBlockType)
                     handler.UpdateTarget(b, 1);
             }
+            handler.DecreaseMove();
             BlastBlocks(group);
         }
         GameManager.Instance.ChangeState(GameState.Falling);
