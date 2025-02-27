@@ -169,5 +169,3 @@ MonoBehaviour:
   isBlastable: 0
   group: []
   blockType: 0
-  neighbours: []
-  neighboursCount: 0

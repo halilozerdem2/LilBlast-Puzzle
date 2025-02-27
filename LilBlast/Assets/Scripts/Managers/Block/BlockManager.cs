@@ -5,8 +5,8 @@ using System.Collections;
 using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
-
 using static GameManager;
+using DG.Tweening.Core.Easing;
 
 public class BlockManager : MonoBehaviour
 {
@@ -18,10 +18,9 @@ public class BlockManager : MonoBehaviour
     public List<Block> blocks;
     public List<Block> blastedBlocks;
     public List<RegularBlock> regularBlocks;
-    public Queue<Block> specialBlocks;
+    public Queue<Block>  specialBlocks;
 
     public GameOverHandler handler;
-
     public GameObject bomb ,vRocket, hRocket;
 
     private int minBlastableBlockGroupSize = 2;
@@ -68,9 +67,6 @@ public class BlockManager : MonoBehaviour
            // Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
         }
         StartCoroutine(CheckValidMoves());
-        
-        //FindAllNeighbours();
-
     }
 
     IEnumerator CheckValidMoves()
@@ -122,38 +118,38 @@ public class BlockManager : MonoBehaviour
     {
         if (GameManager.Instance._state != GameState.WaitingInput) return;
         HashSet<Block> group = block.DetermineGroup();
-        if(block is RegularBlock)
+        if (block is RegularBlock)
         {
             if (group.Count >= minBlastableBlockGroupSize)
             {
                 handler.DecreaseMove();
                 handler.UpdateTarget(block, group.Count);
                 GameManager.Instance.ChangeState(GameState.Blasting);
-                BlastBlocks(group);
+                BlastRegularBlocks(group);
 
-                 switch (group.Count)
-                 {
+                switch (group.Count)
+                {
                     case 3: CreateSpecialBlock(vRocket, block.node); break;
                     case 4: CreateSpecialBlock(bomb, block.node); break;
                     case 5: CreateSpecialBlock(hRocket, block.node); break;
-                 }
+                }
+
+                GameManager.Instance.ChangeState(GameState.Falling);
             }
         }
         else
         {
-            specialBlocks.Clear();
-            foreach (var b in group)
-            {
-                if (b.blockType == handler.targetBlockType)
-                    handler.UpdateTarget(b, 1);
-            }
             handler.DecreaseMove();
-            BlastBlocks(group);
+            GameManager.Instance.ChangeState(GameState.Blasting);
+            specialBlocks.Enqueue(block);
+            BlastSpecialBlocks();
         }
-        GameManager.Instance.ChangeState(GameState.Falling);
+
+        
         block.Shake(0.3f, 0.1f);
         ObjectPool.Instance.PlaySound(5);
     }
+
 
     private void CreateSpecialBlock(GameObject specialBlock, Node aNode)
     {
@@ -161,37 +157,37 @@ public class BlockManager : MonoBehaviour
         Block b = specialBlockObject.GetComponent<Block>();
         b.SetBlock(aNode);
         blocks.Add(b);
+        Vector3 initialSize = b.transform.localScale;
+        // DOTween ile ölçek animasyonu
+        specialBlockObject.transform.localScale = Vector3.zero;
+        specialBlockObject.transform.DOScale(initialSize, 0.7f).SetEase(Ease.OutBack);
     }
 
-
-    private void BlastBlocks(HashSet<Block> aBlockGroup)
+    private void BlastRegularBlocks(HashSet<Block> aBlockGroup)
     {
         foreach (var b in aBlockGroup)
         {
             if (b.node != null)
             {
-                if(b is RegularBlock)
+                if (b is RegularBlock)
                 {
                     BlastBlock(b);
                     regularBlocks.Remove(b as RegularBlock);
                 }
-                else
-                {
-                    specialBlocks.Enqueue(b);
-                    Debug.Log(b);
-                }
-            }   
-        }
 
-        BlastSpecialBlocks();
+            }
+        }
     }
 
 
     private void BlastSpecialBlocks()
     {
+        StartCoroutine(ChangeStateDelayed(0.31f, GameState.Falling));
         while (specialBlocks.Count > 0)
         {
-            HashSet<Block> blockGroup = specialBlocks.Dequeue().DetermineGroup();
+            Block specialBlock = specialBlocks.Dequeue();
+            specialBlock.isBeingDestroyed = true;
+            HashSet<Block> blockGroup = specialBlock.DetermineGroup();
 
             foreach (var item in blockGroup)
             {
@@ -199,16 +195,37 @@ public class BlockManager : MonoBehaviour
                     regularBlocks.Remove(item as RegularBlock);
                 else
                 {
-                    if (item != blockGroup.First())
+                    if (item != blockGroup.First() && !item.isBeingDestroyed)
+                    {
+                        item.isBeingDestroyed = true;
                         specialBlocks.Enqueue(item);
+                    }
                 }
+                if (item.blockType == handler.targetBlockType)
+                    handler.UpdateTarget(item, 1);
 
-                BlastBlock(item);
+                StartCoroutine(DelayedBlastBlock(item, 0.3f)); // 0.3 saniye gecikmeli patlat
             }
+            HighlightGroupBeforeDestroy(blockGroup);
         }
+        
+
+    }
+    IEnumerator ChangeStateDelayed(float aDelay, GameState aState)
+    {
+        yield return new WaitForSeconds(aDelay);
+        Debug.Log("a");
+        GameManager.Instance.ChangeState(aState);
+
     }
 
+    private IEnumerator DelayedBlastBlock(Block b, float delay)
+    {
+        if(!(b is RegularBlock)) b.Shake(delay, 0.2f);
+        yield return new WaitForSeconds(delay);
+        BlastBlock(b);
 
+    }
     private void BlastBlock(Block b)
     {
         GridManager.freeNodes.Add(b.node);
@@ -222,24 +239,66 @@ public class BlockManager : MonoBehaviour
 
     }
 
-    private IEnumerator MoveUpAndDestroy(Block b)
+    void HighlightGroupBeforeDestroy(HashSet<Block> blockGroup)
     {
-        float duration = 0.5f;
-        float elapsed = 0f;
-
-        Vector3 startPos = b.transform.position;
-        Vector3 targetPos = startPos + new Vector3(0, 0.5f, 0); // Blok yukarı çıkacak
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            b.transform.position = Vector3.Lerp(startPos, targetPos, elapsed / duration);
-            yield return null;
-        }
-
-        Destroy(b.gameObject);
+        HashSet<Vector3> borderPoints = GetBorderPoints(blockGroup);
+        DrawBorder(borderPoints);
     }
 
+    HashSet<Vector3> GetBorderPoints(HashSet<Block> blockGroup)
+    {
+        if (blockGroup.Count == 0) return new HashSet<Vector3>();
+
+        float minX = float.MaxValue, maxX = float.MinValue;
+        float minY = float.MaxValue, maxY = float.MinValue;
+
+        // Blok grubundaki en uç noktaları belirle
+        foreach (var block in blockGroup)
+        {
+            Vector3 pos = block.transform.position;
+            minX = Mathf.Min(minX, pos.x);
+            maxX = Mathf.Max(maxX, pos.x);
+            minY = Mathf.Min(minY, pos.y);
+            maxY = Mathf.Max(maxY, pos.y);
+        }
+
+        // Sadece en uç noktaları ekleyerek sınırı oluştur
+        HashSet<Vector3> points = new HashSet<Vector3>
+    {
+        new Vector3(minX - 0.2f, maxY + 0.2f, 0), // Sol üst
+        new Vector3(maxX + 0.2f, maxY + 0.2f, 0), // Sağ üst
+        new Vector3(maxX + 0.2f, minY - 0.2f, 0), // Sağ alt
+        new Vector3(minX - 0.2f, minY - 0.2f, 0)  // Sol alt
+    };
+        return points;
+    }
+    void DrawBorder(HashSet<Vector3> borderPoints)
+    {
+        GameObject lineObj = new GameObject("BorderLine");
+        LineRenderer lineRenderer = lineObj.AddComponent<LineRenderer>();
+
+        lineRenderer.positionCount = borderPoints.Count;
+        lineRenderer.SetPositions(borderPoints.ToArray());
+
+        lineRenderer.startWidth = 0.1f;
+        lineRenderer.endWidth = 0.1f;
+        lineRenderer.loop = true;
+
+        lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        lineRenderer.startColor = Color.red;
+        lineRenderer.endColor = Color.cyan;
+
+        lineRenderer.sortingOrder = 3;
+        lineRenderer.enabled = true;
+        StartCoroutine(DestroyDelayed(lineObj));
+        
+    }
+
+    IEnumerator DestroyDelayed(GameObject aGameObject)
+    {
+        yield return new WaitForSeconds(0.5f);
+        Destroy(aGameObject);
+    }
 
 }
 

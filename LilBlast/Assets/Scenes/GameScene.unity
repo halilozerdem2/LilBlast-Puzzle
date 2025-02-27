@@ -2603,6 +2603,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 3d5675187c0e842a18163767eed3a98a, type: 3}
   - {fileID: 8300000, guid: 5e275b86f27ae48a08d0d5ac8a48e79d, type: 3}
   - {fileID: 8300000, guid: 3cf9558e7babd4a108a41a205e2e0244, type: 3}
+  - {fileID: 8300000, guid: 10ef4ab68b32d45daad38229b689842d, type: 3}
   poolSize: 20
 --- !u!1 &843309968
 GameObject:

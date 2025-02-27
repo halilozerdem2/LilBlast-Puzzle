@@ -13,6 +13,7 @@ public abstract class Block : MonoBehaviour
     public int blockType;
     private BoxCollider2D boxCollider2D;
     private bool isShaking;
+    public bool isBeingDestroyed;
  
     private Vector2 originalPosition;
 

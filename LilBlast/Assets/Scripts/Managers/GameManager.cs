@@ -34,7 +34,7 @@ public class GameManager : MonoBehaviour
     {
         if(_state==newState) return;
         
-        //Debug.Log("State changing from " + _state + " to " + newState);
+        Debug.Log("State changing from " + _state + " to " + newState);
         _state = newState;
 
         switch (newState)

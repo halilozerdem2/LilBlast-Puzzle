@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 3216822030193634071}
   - component: {fileID: 6660801491848553797}
   - component: {fileID: 3876964471558161001}
-  - component: {fileID: 8614591139482797029}
   - component: {fileID: 6644172011087429977}
+  - component: {fileID: 6475583573953255147}
   m_Layer: 0
   m_Name: hRocket
   m_TagString: Untagged
@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0.122, y: 0.0040457, z: 0}
-  m_LocalScale: {x: 0.23332374, y: 0.23551112, z: 0.5833093}
+  m_LocalScale: {x: 0.23, y: 0.23, z: 0.23}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -136,7 +136,23 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 2.4576392, y: 2.1482759}
   m_EdgeRadius: 0
---- !u!120 &8614591139482797029
+--- !u!114 &6644172011087429977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7313523251230437707}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4f91d9c9ac2348de95f4ce9196ea682, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  node: {fileID: 0}
+  isBlastable: 0
+  group: []
+  blockType: 7
+--- !u!120 &6475583573953255147
 LineRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
@@ -243,19 +259,3 @@ LineRenderer:
   m_UseWorldSpace: 1
   m_Loop: 0
   m_ApplyActiveColorSpace: 1
---- !u!114 &6644172011087429977
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7313523251230437707}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4f91d9c9ac2348de95f4ce9196ea682, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  node: {fileID: 0}
-  isBlastable: 0
-  group: []
-  blockType: 7

@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6660801491848553797}
   - component: {fileID: 3876964471558161001}
   - component: {fileID: 175541461440685107}
-  - component: {fileID: 8614591139482797029}
+  - component: {fileID: 825342122305301241}
   m_Layer: 0
   m_Name: Bomb
   m_TagString: Untagged
@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0.0028263, y: 0.0040457, z: 0}
-  m_LocalScale: {x: 0.59377366, y: 0.5993402, z: 1.4844341}
+  m_LocalScale: {x: 0.6, y: 0.6, z: 0.6}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -152,7 +152,7 @@ MonoBehaviour:
   isBlastable: 0
   group: []
   blockType: 6
---- !u!120 &8614591139482797029
+--- !u!120 &825342122305301241
 LineRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
