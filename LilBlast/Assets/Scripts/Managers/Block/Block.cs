@@ -14,7 +14,8 @@ public abstract class Block : MonoBehaviour
     private BoxCollider2D boxCollider2D;
     private bool isShaking;
     public bool isBeingDestroyed;
- 
+    public abstract int scoreEffect { get; set; }
+
     private Vector2 originalPosition;
 
     private void Awake()

@@ -151,7 +151,8 @@ MonoBehaviour:
   node: {fileID: 0}
   isBlastable: 0
   group: []
-  blockType: 7
+  blockType: 6
+  isBeingDestroyed: 0
 --- !u!120 &6475583573953255147
 LineRenderer:
   serializedVersion: 2

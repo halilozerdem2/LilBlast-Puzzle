@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 public class RegularBlock : Block
 {
-
+    public override int scoreEffect { get; set; } = 10;
+    
     public override HashSet<Block> DetermineGroup()
     {
         HashSet<Block> visited = new HashSet<Block>();

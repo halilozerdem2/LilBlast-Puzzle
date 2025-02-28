@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class BombBlock : Block
 {
+    public override int scoreEffect { get; set; } = 50;
+
     public override HashSet<Block> DetermineGroup()
     {
         HashSet<Block> group = new HashSet<Block>();

@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class VerticalRocketBlock : Block
 {
+    public override int scoreEffect { get; set; } = 25;
+
     public override HashSet<Block> DetermineGroup()
     {
         HashSet<Block> group = new HashSet<Block>();

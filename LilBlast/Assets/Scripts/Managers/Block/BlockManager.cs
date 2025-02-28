@@ -20,7 +20,8 @@ public class BlockManager : MonoBehaviour
     public List<RegularBlock> regularBlocks;
     public Queue<Block>  specialBlocks;
 
-    public GameOverHandler handler;
+    [SerializeField] private GameOverHandler handler;
+    [SerializeField] private ScoreManager score; 
     public GameObject bomb ,vRocket, hRocket;
 
     private int minBlastableBlockGroupSize = 2;
@@ -233,6 +234,7 @@ public class BlockManager : MonoBehaviour
         b.node.OccupiedBlock = null;
         OnBlockBlasted?.Invoke(b);
         blocks.Remove(b);
+        score.UpdateScore(b);
         Destroy(b.gameObject);
         //ObjectPool.Instance.ReturnToBlockPool(b.blockType, b.gameObject);
         ObjectPool.Instance.GetParticleFromPool(b.blockType, b.node.Pos, Quaternion.identity);

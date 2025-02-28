@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject blastEffect;
     [SerializeField] ShuffleManager shuffle;
     [SerializeField] CanvasManager canvas;
+    [SerializeField] ScoreManager score;
     [SerializeField] GameOverHandler handler;
 
    
@@ -107,6 +108,7 @@ public class GameManager : MonoBehaviour
         handler.collectedBlocks.Clear();
         shuffle.availableNodes.Clear();
         shuffle.availableNodes.Clear();
+        score.ResetScore();
     }
 
 
