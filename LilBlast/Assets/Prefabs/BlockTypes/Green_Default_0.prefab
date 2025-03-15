@@ -169,5 +169,4 @@ MonoBehaviour:
   isBlastable: 0
   group: []
   blockType: 1
-  neighbours: []
-  neighboursCount: 0
+  isBeingDestroyed: 0

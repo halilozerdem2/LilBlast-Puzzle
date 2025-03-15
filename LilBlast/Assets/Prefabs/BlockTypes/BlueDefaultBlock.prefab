@@ -169,3 +169,4 @@ MonoBehaviour:
   isBlastable: 0
   group: []
   blockType: 0
+  isBeingDestroyed: 0

@@ -72,7 +72,7 @@ public class BlockManager : MonoBehaviour
 
     IEnumerator CheckValidMoves()
     {
-        yield return new WaitForSeconds(0.31f);
+        yield return new WaitForSeconds(0.51f);
        // Debug.Log("Block spawnland |: boş hücre sayısı : " + GridManager.freeNodes.Count);
         if (HasValidMoves())
             GameManager.Instance.ChangeState(GameState.WaitingInput);
@@ -148,7 +148,7 @@ public class BlockManager : MonoBehaviour
 
         
         block.Shake(0.3f, 0.1f);
-        ObjectPool.Instance.PlaySound(5);
+        //ObjectPool.Instance.PlaySound(5);
     }
 
 
@@ -205,9 +205,9 @@ public class BlockManager : MonoBehaviour
                 if (item.blockType == handler.targetBlockType)
                     handler.UpdateTarget(item, 1);
 
-                StartCoroutine(DelayedBlastBlock(item, 0.3f)); // 0.3 saniye gecikmeli patlat
+                StartCoroutine(DelayedBlastBlock(item, 0.3f));
             }
-            HighlightGroupBeforeDestroy(blockGroup);
+            //HighlightGroupBeforeDestroy(blockGroup);
         }
         
 
@@ -222,7 +222,7 @@ public class BlockManager : MonoBehaviour
 
     private IEnumerator DelayedBlastBlock(Block b, float delay)
     {
-        if(!(b is RegularBlock)) b.Shake(delay, 0.2f);
+        if(b is BombBlock) b.Shake(delay, 0.2f);
         yield return new WaitForSeconds(delay);
         BlastBlock(b);
 

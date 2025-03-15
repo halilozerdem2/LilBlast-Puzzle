@@ -47,12 +47,12 @@ public class GridManager : MonoBehaviour
 }
     private void CenterCamera(Vector2 center)
     {
-        Camera.main.transform.position = new Vector3(center.x, center.y + 2f, -10); // Kamera ortalama
+        Camera.main.transform.position = new Vector3(center.x, center.y + 2f, -14); // Kamera ortalama
 
         // Kamera boyutunu grid büyüklüğüne göre ayarla
         float aspectRatio = (float)Screen.width / Screen.height;
-        float verticalSize = _height / 2f + .5f; // +1 biraz kenar boşluğu eklemek için
-        float horizontalSize = (_width / 2f + .5f) / aspectRatio;
+        float verticalSize = _height / 2f + .75f; // +1 biraz kenar boşluğu eklemek için
+        float horizontalSize = (_width / 2f + .75f) / aspectRatio;
         Camera.main.orthographicSize = Mathf.Max(verticalSize, horizontalSize);
 
         GameManager.Instance.ChangeState(GameState.SpawningBlocks);
