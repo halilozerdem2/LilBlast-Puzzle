@@ -9,8 +9,7 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] private Node _nodePrefab;
     [SerializeField] private SpriteRenderer _boardPrefab;
-
-    [SerializeField] private GameObject blastEffect;
+    
     [SerializeField] ShuffleManager shuffle;
     [SerializeField] CanvasManager canvas;
     [SerializeField] ScoreManager score;

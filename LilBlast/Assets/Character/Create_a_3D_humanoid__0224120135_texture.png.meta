@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Create_a_3D_humanoid__0224120135_texture_0: -5072153857363829097
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

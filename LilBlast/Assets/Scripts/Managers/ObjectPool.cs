@@ -112,7 +112,6 @@ public class ObjectPool : MonoBehaviour
         yield return new WaitForSeconds(delay);
         obj.SetActive(false);
         pool.Enqueue(obj);
-        Debug.Log("aa");
     }
     /*
     public GameObject GetBlockFromPool(int type, Vector3 position, Quaternion rotation)

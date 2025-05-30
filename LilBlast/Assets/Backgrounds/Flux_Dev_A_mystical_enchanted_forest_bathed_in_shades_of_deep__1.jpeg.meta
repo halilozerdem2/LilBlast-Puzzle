@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Flux_Dev_A_mystical_enchanted_forest_bathed_in_shades_of_deep__1_0: -1674530348796943050
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
