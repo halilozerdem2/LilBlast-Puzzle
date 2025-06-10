@@ -27,7 +27,7 @@ public class ShuffleManager : MonoBehaviour
             Debug.LogError("Shuffle için yeterli boş node bulunamadı!");
             return;
         }
-            Debug.Log(availableNodes.Count);
+            //Debug.Log(availableNodes.Count);
         
         foreach (var block in blocks)
         {

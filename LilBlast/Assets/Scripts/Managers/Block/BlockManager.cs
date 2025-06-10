@@ -7,6 +7,8 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 using static GameManager;
 using DG.Tweening.Core.Easing;
+using Unity.VisualScripting;
+using UnityEngine.SceneManagement;
 
 public class BlockManager : MonoBehaviour
 {
@@ -29,15 +31,29 @@ public class BlockManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        LevelManager.OnLevelOneLoaded += InitializeBlockManager;
+
+    }
+    private void OnDestroy()
+    {
+        LevelManager.OnLevelOneLoaded -= InitializeBlockManager;
+    }
+    
+    private void InitializeBlockManager()
+    {
+        Debug.Log("BlockManager başlatılıyor...");
+    
         blocks = new List<Block>();
         specialBlocks = new Queue<Block>();
         blastedBlocks = new List<Block>();
-        regularBlocks=new List<RegularBlock>();
-
+        regularBlocks = new List<RegularBlock>();
     }
+
+
     public void SpawnBlocks()
     {
         //if (GameManager.Instance._state != GameState.SpawningBlocks) return;
+        
         List<Node> nodesToFill = GridManager.freeNodes.ToList();
         int counter = 0, spawnIndex;
         int targetBlockType = handler.targetBlockType;
@@ -56,7 +72,7 @@ public class BlockManager : MonoBehaviour
             GridManager.freeNodes.Remove(node);
 
             Vector3 spawnPos = new Vector3(node.Pos.x, GridManager.Instance._height + 1, 0);
-            Block randomBlock = Instantiate(blockTypes[spawnIndex], spawnPos, Quaternion.identity);
+            Block randomBlock = Instantiate(blockTypes[spawnIndex], spawnPos, Quaternion.identity, node.transform);
             //Block randomBlock =  ObjectPool.Instance.GetBlockFromPool(spawnIndex, spawnPos, Quaternion.identity);
             counter++;
             randomBlock.SetBlock(node);
@@ -154,7 +170,7 @@ public class BlockManager : MonoBehaviour
 
     private void CreateSpecialBlock(GameObject specialBlock, Node aNode)
     {
-        var specialBlockObject = Instantiate(specialBlock, aNode.Pos, Quaternion.identity);
+        var specialBlockObject = Instantiate(specialBlock, aNode.Pos, Quaternion.identity,aNode.transform);
         Block b = specialBlockObject.GetComponent<Block>();
         b.SetBlock(aNode);
         blocks.Add(b);
@@ -215,7 +231,7 @@ public class BlockManager : MonoBehaviour
     IEnumerator ChangeStateDelayed(float aDelay, GameState aState)
     {
         yield return new WaitForSeconds(aDelay);
-        Debug.Log("a");
+       // Debug.Log("a");
         GameManager.Instance.ChangeState(aState);
 
     }
@@ -301,6 +317,6 @@ public class BlockManager : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         Destroy(aGameObject);
     }
-
+    
 }
 

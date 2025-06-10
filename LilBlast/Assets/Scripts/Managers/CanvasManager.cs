@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 public class CanvasManager : MonoBehaviour
 {
     [SerializeField] GameObject mainMenuPanel;
@@ -10,14 +11,15 @@ public class CanvasManager : MonoBehaviour
     private void Awake()
     {
         shuffle = FindAnyObjectByType<ShuffleManager>();
+        DontDestroyOnLoad(this);
     }
 
     public void ActivateMainMenu()
     {
+        GameManager.Instance.ChangeState(GameManager.GameState.Menu);
         Time.timeScale = 0f;
         DeactivateAllPanels();
         mainMenuPanel.SetActive(true);
-        GameManager.Instance.ChangeState(GameManager.GameState.Menu);
     }
 
     public void ActivateWinPanel()
@@ -68,6 +70,7 @@ public class CanvasManager : MonoBehaviour
 
     public void TryAgain()
     {
+        //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex+1);
         DeactivateAllPanels();
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
         GameManager.Instance.RestartGame();
@@ -76,6 +79,7 @@ public class CanvasManager : MonoBehaviour
     }
     public void Play()
     {
+        
         DeactivateAllPanels();
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
         gamePanel.SetActive(true);

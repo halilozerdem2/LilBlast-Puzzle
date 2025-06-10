@@ -23,6 +23,7 @@ public class GameManager : MonoBehaviour
         Application.targetFrameRate = 60; // FPS'i 60'a sabitle
         QualitySettings.vSyncCount = 0;   // VSync'i kapat
         Instance = this;
+        DontDestroyOnLoad(this);
     }
 
     private void Start()
@@ -45,9 +46,10 @@ public class GameManager : MonoBehaviour
                 break;
                 
             case GameState.Play:
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex+1);
                 AudioManager.Instance.PlayGameSceneMusic();
                 handler.AssignTarget();
-                GridManager.Instance.GenerateGrid();
+                //GridManager.Instance.GenerateGrid();
                 break;
 
             case GameState.SpawningBlocks:
@@ -86,11 +88,11 @@ public class GameManager : MonoBehaviour
     public void RestartGame()
     {
         Time.timeScale = 1;
-
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
     public void Reset()
     {
+        Debug.Log("Reset");
         // Grid ve blokları temizle
         foreach (var block in BlockManager.Instance.blocks)
         {

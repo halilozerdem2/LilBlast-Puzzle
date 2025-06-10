@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 using static GameManager;
 
 public class GridManager : MonoBehaviour
@@ -12,9 +14,11 @@ public class GridManager : MonoBehaviour
 
     [SerializeField] private SpriteRenderer _boardPrefab;
     [SerializeField] private Node _nodePrefab;
+    [SerializeField] private GridList _gridParent; 
 
     public Dictionary<Vector2Int, Node> _nodes;
     public static List<Node> freeNodes;
+    public CameraFitter cameraFitter;
 
     private void Awake()
     {
@@ -23,42 +27,36 @@ public class GridManager : MonoBehaviour
         _nodes = new Dictionary<Vector2Int, Node>();
         freeNodes = new List<Node>();
 
+        // Sadece sahne 1 yüklendiğinde grid oluştur
+        LevelManager.OnLevelOneLoaded += InitializeGrid;
+        
     }
 
-    public void GenerateGrid()
-{
-    for (int x = 0; x < _width; x++)
+    private void OnDestroy()
     {
-        for (int y = 0; y < _height; y++)
+        LevelManager.OnLevelOneLoaded -= InitializeGrid;
+    }
+
+    private void InitializeGrid()
+    {
+        _gridParent = FindAnyObjectByType<GridList>();
+        Debug.Log("GridManager: Grid sahne 1 için oluşturuluyor...");
+        GetGridListFromScene();
+        _width = _gridParent.Width;
+        _height = _gridParent.Height;
+    }
+
+    public void GetGridListFromScene()
+    {
+        foreach (var node in _gridParent.nodes)
         {
-            var node = Instantiate(_nodePrefab, new Vector3(x, y), Quaternion.identity);
-            node.gridPosition = new Vector2Int(x, y);
-            _nodes[node.gridPosition] = node;
-
-            freeNodes.Add(node); // Başlangıçta tüm düğümler boş olacak
+            freeNodes.Add(node);
+            _nodes.Add(node.gridPosition, node);
+            Debug.Log("Eklendi");
+            
         }
-    }
-
-    var center = new Vector2((float)_width / 2 - 0.5f, (float)_height / 2 - 0.5f);
-    var board = Instantiate(_boardPrefab, center, Quaternion.identity);
-    board.transform.localScale = new Vector3(_width+0.25f, _height+0.25f, 1);
-        CenterCamera(center);
-    
-}
-    private void CenterCamera(Vector2 center)
-    {
-        Camera.main.transform.position = new Vector3(center.x, center.y + 2f, -14); // Kamera ortalama
-
-        // Kamera boyutunu grid büyüklüğüne göre ayarla
-        float aspectRatio = (float)Screen.width / Screen.height;
-        float verticalSize = _height / 2f + .75f; // +1 biraz kenar boşluğu eklemek için
-        float horizontalSize = (_width / 2f + .75f) / aspectRatio;
-        Camera.main.orthographicSize = Mathf.Max(verticalSize, horizontalSize);
-
         GameManager.Instance.ChangeState(GameState.SpawningBlocks);
     }
-
-
 
     public void UpdateGrid()
     {
@@ -77,6 +75,7 @@ public class GridManager : MonoBehaviour
                 {
                     if (emptyY == -1) emptyY = y; // İlk boş hücreyi bul
                     freeNodes.Add(currentNode); // Boş hücreyi freeNodes listesine ekle
+                    //Debug.Log("11111");
                     continue;
                 }
 
@@ -108,22 +107,7 @@ public class GridManager : MonoBehaviour
 
     }
 
-
-    public void UpdateFreeNodes()
-    {
-        freeNodes.Clear();
-        foreach (var node in _nodes.Values)
-        {
-            if (node.OccupiedBlock == null)
-            {
-                freeNodes.Add(node);
-                node.OccupiedBlock.SetBlock(node);
-            }
-
-        }
-    }
-
-
+    
     public void UpdateOccupiedBlock()
     {
         foreach (var node in _nodes.Values)
