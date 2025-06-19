@@ -9,8 +9,9 @@ public class ShuffleManager : MonoBehaviour
 {
     public  List<Node> availableNodes;
     public List<Block> blocks;
+   // public GridList gridList;
 
-    public void HandleShuffle()
+    public void HandleShuffle(bool isOrdered=false)
     {
         Instance.ChangeState(GameState.Shuffling);
         foreach (var node in GridManager.Instance._nodes.Values)
@@ -19,7 +20,7 @@ public class ShuffleManager : MonoBehaviour
             node.OccupiedBlock = null;
         }
 
-        availableNodes = new List<Node>(GridManager.Instance._nodes.Values); // Shuffle için boş düğümleri listeye al
+        availableNodes = new List<Node>(GridManager.freeNodes); // Shuffle için boş düğümleri listeye al
         blocks = new List<Block>(BlockManager.Instance.blocks);
 
         if (availableNodes.Count < blocks.Count)
@@ -40,7 +41,9 @@ public class ShuffleManager : MonoBehaviour
                 targetNode = availableNodes[Random.Range(0, availableNodes.Count)];
             }
 
+            Debug.Log("karışıyor");
             block.SetBlock(targetNode);
+            
             GridManager.freeNodes.Remove(targetNode);// Seçilen node artık dolu olduğu için listeden çıkar
             block.transform.DOMove(targetNode.Pos, 1.2f).SetEase(Ease.InOutQuad);
             availableNodes.Remove(targetNode);
@@ -58,12 +61,15 @@ public class ShuffleManager : MonoBehaviour
         Instance.ChangeState(GameState.WaitingInput);
     }
 
-    private Node AssignNewPosition(int type, List<Node> availableNodes)
+    private Node AssignNewPosition(int type, List<Node> availableNodes, bool isOrdered = false)
     {
-        float percentage = Random.Range(0f, 1f);
         Node newNode = null;
+        float percentage = Random.Range(0f, 1f);
 
-        if (percentage > .3f) // %70 tamamen rastgele
+        if (isOrdered)
+            percentage = Random.Range(0f, 0.1f);
+
+        if (percentage > 0.1f) // %90 tamamen rastgele
         {
             // Fisher-Yates Shuffle uygulanarak rastgele seçme
             int n = availableNodes.Count;
@@ -75,7 +81,7 @@ public class ShuffleManager : MonoBehaviour
 
             newNode = availableNodes[0]; // Fisher-Yates ile karıştırılan ilk düğümü seç
         }
-        else if(percentage>=0.15f && percentage<=.3f) // sütuna atama
+        else if(percentage>=0.05f && percentage<=0.1f) // sütuna atama
         {
             int selectedColumn = BlockType.Instance.SelectColumn(type);
             List<Node> columnNodes = availableNodes.FindAll(n => n.gridPosition.x == selectedColumn);

@@ -6,6 +6,8 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
     public static event Action OnGridReady;
+    public static event Action<GameState> OnStateChanged;
+
 
     [SerializeField] private Node _nodePrefab;
     [SerializeField] private SpriteRenderer _boardPrefab;
@@ -28,7 +30,10 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        canvas.ActivateMainMenu();
+        ChangeState(GameState.Menu);
+        if(LevelManager.GetLastCompletedLevel()>=4)
+            LevelManager.ResetProgress();
+        
     }
 
     public void ChangeState(GameState newState)
@@ -37,19 +42,20 @@ public class GameManager : MonoBehaviour
         
         Debug.Log("State changing from " + _state + " to " + newState);
         _state = newState;
+        
+        OnStateChanged?.Invoke(_state);
 
         switch (newState)
         {
             case GameState.Menu:
-                AudioManager.Instance.PlayMainMenuMusic();
                 Reset();
+                canvas.ActivateMainMenu();
+                AudioManager.Instance.PlayMainMenuMusic();
                 break;
                 
             case GameState.Play:
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex+1);
                 AudioManager.Instance.PlayGameSceneMusic();
                 handler.AssignTarget();
-                //GridManager.Instance.GenerateGrid();
                 break;
 
             case GameState.SpawningBlocks:
@@ -75,11 +81,14 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Win:
+                Reset();
+                LevelManager.SaveLevelProgress(SceneManager.GetActiveScene().buildIndex+1);
                 AudioManager.Instance.StopMusic();
                 canvas.ActivateWinPanel();
                 break;
 
             case GameState.Lose:
+                Reset();
                 AudioManager.Instance.StopMusic();
                 canvas.ActivateLostPanel();
                 break;
@@ -110,6 +119,24 @@ public class GameManager : MonoBehaviour
         shuffle.availableNodes.Clear();
         shuffle.availableNodes.Clear();
         score.ResetScore();
+    }
+
+    private void OnEnable()
+    {
+        GameManager.OnStateChanged += HandleGameStateChanged;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnStateChanged -= HandleGameStateChanged;
+    }
+
+    private void HandleGameStateChanged(GameManager.GameState state)
+    {
+        if (state == GameManager.GameState.Play)
+        {
+            Debug.Log("Game has entered PLAY state!");
+        }
     }
 
 

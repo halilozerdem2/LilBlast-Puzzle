@@ -31,36 +31,32 @@ public class BlockManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        LevelManager.OnLevelOneLoaded += InitializeBlockManager;
-
-    }
-    private void OnDestroy()
-    {
-        LevelManager.OnLevelOneLoaded -= InitializeBlockManager;
-    }
-    
-    private void InitializeBlockManager()
-    {
-        Debug.Log("BlockManager başlatılıyor...");
-    
         blocks = new List<Block>();
         specialBlocks = new Queue<Block>();
         blastedBlocks = new List<Block>();
         regularBlocks = new List<RegularBlock>();
     }
 
+    public void InitializeBlockManager()
+    {
+        blocks.Clear();
+        specialBlocks.Clear();
+        blastedBlocks.Clear();
+        regularBlocks.Clear();
+        Debug.Log("BlockManager yeniden başlatıldı.");
+    }
+
 
     public void SpawnBlocks()
     {
         //if (GameManager.Instance._state != GameState.SpawningBlocks) return;
-        
         List<Node> nodesToFill = GridManager.freeNodes.ToList();
         int counter = 0, spawnIndex;
         int targetBlockType = handler.targetBlockType;
         
         foreach (var node in nodesToFill)
         {
-            int deadlockIndex = counter % 5;
+            int deadlockIndex = counter % 5; // deadlock için
             int randomIndex = Random.Range(0, blockTypes.Length);
             
             float spawnAccuricyPercentage = Random.Range(0f, 1f);
@@ -74,12 +70,12 @@ public class BlockManager : MonoBehaviour
             Vector3 spawnPos = new Vector3(node.Pos.x, GridManager.Instance._height + 1, 0);
             Block randomBlock = Instantiate(blockTypes[spawnIndex], spawnPos, Quaternion.identity, node.transform);
             //Block randomBlock =  ObjectPool.Instance.GetBlockFromPool(spawnIndex, spawnPos, Quaternion.identity);
-            counter++;
+            counter++; // deadlock için
             randomBlock.SetBlock(node);
+            
             blocks.Add(randomBlock);
             regularBlocks.Add(randomBlock as RegularBlock);
-
-
+            
             randomBlock.transform.DOMove(node.Pos, 0.5f).SetEase(Ease.OutBounce);
            // Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
         }
@@ -256,61 +252,8 @@ public class BlockManager : MonoBehaviour
         ObjectPool.Instance.GetParticleFromPool(b.blockType, b.node.Pos, Quaternion.identity);
 
     }
+    
 
-    void HighlightGroupBeforeDestroy(HashSet<Block> blockGroup)
-    {
-        HashSet<Vector3> borderPoints = GetBorderPoints(blockGroup);
-        DrawBorder(borderPoints);
-    }
-
-    HashSet<Vector3> GetBorderPoints(HashSet<Block> blockGroup)
-    {
-        if (blockGroup.Count == 0) return new HashSet<Vector3>();
-
-        float minX = float.MaxValue, maxX = float.MinValue;
-        float minY = float.MaxValue, maxY = float.MinValue;
-
-        // Blok grubundaki en uç noktaları belirle
-        foreach (var block in blockGroup)
-        {
-            Vector3 pos = block.transform.position;
-            minX = Mathf.Min(minX, pos.x);
-            maxX = Mathf.Max(maxX, pos.x);
-            minY = Mathf.Min(minY, pos.y);
-            maxY = Mathf.Max(maxY, pos.y);
-        }
-
-        // Sadece en uç noktaları ekleyerek sınırı oluştur
-        HashSet<Vector3> points = new HashSet<Vector3>
-    {
-        new Vector3(minX - 0.2f, maxY + 0.2f, 0), // Sol üst
-        new Vector3(maxX + 0.2f, maxY + 0.2f, 0), // Sağ üst
-        new Vector3(maxX + 0.2f, minY - 0.2f, 0), // Sağ alt
-        new Vector3(minX - 0.2f, minY - 0.2f, 0)  // Sol alt
-    };
-        return points;
-    }
-    void DrawBorder(HashSet<Vector3> borderPoints)
-    {
-        GameObject lineObj = new GameObject("BorderLine");
-        LineRenderer lineRenderer = lineObj.AddComponent<LineRenderer>();
-
-        lineRenderer.positionCount = borderPoints.Count;
-        lineRenderer.SetPositions(borderPoints.ToArray());
-
-        lineRenderer.startWidth = 0.1f;
-        lineRenderer.endWidth = 0.1f;
-        lineRenderer.loop = true;
-
-        lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-        lineRenderer.startColor = Color.red;
-        lineRenderer.endColor = Color.cyan;
-
-        lineRenderer.sortingOrder = 3;
-        lineRenderer.enabled = true;
-        StartCoroutine(DestroyDelayed(lineObj));
-        
-    }
 
     IEnumerator DestroyDelayed(GameObject aGameObject)
     {

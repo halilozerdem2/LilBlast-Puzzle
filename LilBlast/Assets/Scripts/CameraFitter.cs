@@ -7,7 +7,7 @@ public class CameraFitter : MonoBehaviour
     // Kenar boşluk oranları (ekran yüksekliği veya genişliği bazında)
     [Header("Safe Area Percentages")]
     [SerializeField] private float topMarginPercent = 0.35f;     // Üst panelden %40
-    [SerializeField] private float bottomMarginPercent = 0.15f; // Alt panelden %15
+    [SerializeField] private float bottomMarginPercent = 0.20f; // Alt panelden %15
     [SerializeField] private float sideMarginPercent = 0.02f;   // Yanlardan %5
 
     public void FitCameraToGrid(int gridWidth, int gridHeight, Transform gridParent)

@@ -8,6 +8,7 @@ public class ObjectPool : MonoBehaviour
     public GameObject[] blockPrefabs;
     public AudioClip[] audioClips; // Ses efektleri için
     public int poolSize = 10;
+    public Transform pools;
 
     private Dictionary<int, Queue<GameObject>> particlePools = new Dictionary<int, Queue<GameObject>>();
     //private Dictionary<int, Queue<GameObject>> blockPools = new Dictionary<int, Queue<GameObject>>();
@@ -47,7 +48,7 @@ public class ObjectPool : MonoBehaviour
 
         for (int j = 0; j < poolSize; j++)
         {
-            GameObject obj = Instantiate(prefab, transform);
+            GameObject obj = Instantiate(prefab,pools.transform);
             obj.SetActive(false);
             pool.Enqueue(obj);
         }
@@ -67,6 +68,7 @@ public class ObjectPool : MonoBehaviour
         if (obj == null) return null;
 
         ParticleSystem ps = obj.GetComponent<ParticleSystem>();
+        ps.Play();
         if (ps != null)
         {
             ps.Play();
@@ -110,6 +112,7 @@ public class ObjectPool : MonoBehaviour
     private System.Collections.IEnumerator ReturnToPool(GameObject obj, Queue<GameObject> pool, float delay)
     {
         yield return new WaitForSeconds(delay);
+        Debug.Log("Returning to the pool"+ obj.name);
         obj.SetActive(false);
         pool.Enqueue(obj);
     }

@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using static GameManager;
+using Quaternion = UnityEngine.Quaternion;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 public class GridManager : MonoBehaviour
 {
@@ -18,6 +22,7 @@ public class GridManager : MonoBehaviour
 
     public Dictionary<Vector2Int, Node> _nodes;
     public static List<Node> freeNodes;
+    public GameObject gridPrefab;
     public CameraFitter cameraFitter;
 
     private void Awake()
@@ -27,42 +32,63 @@ public class GridManager : MonoBehaviour
         _nodes = new Dictionary<Vector2Int, Node>();
         freeNodes = new List<Node>();
 
-        // Sadece sahne 1 yüklendiğinde grid oluştur
-        LevelManager.OnLevelOneLoaded += InitializeGrid;
+    }
+    
+    public void InitializeGrid()
+    {
+        _gridParent = null;
+        _gridParent = FindAnyObjectByType<GridList>();
+        if (_gridParent != null)
+        {
+            _width = _gridParent.Width;
+            _height = _gridParent.Height;
+            GetGridListFromScene(_gridParent);
+        }
+        else
+        {
+            GenerateGrid();
+        }
+            BlockManager.Instance.InitializeBlockManager();
+            GameManager.Instance.ChangeState(GameState.SpawningBlocks);
         
     }
 
-    private void OnDestroy()
+    public void GetGridListFromScene(GridList aGridList)
     {
-        LevelManager.OnLevelOneLoaded -= InitializeGrid;
-    }
-
-    private void InitializeGrid()
-    {
-        _gridParent = FindAnyObjectByType<GridList>();
-        Debug.Log("GridManager: Grid sahne 1 için oluşturuluyor...");
-        GetGridListFromScene();
-        _width = _gridParent.Width;
-        _height = _gridParent.Height;
-    }
-
-    public void GetGridListFromScene()
-    {
-        foreach (var node in _gridParent.nodes)
+        foreach (var node in aGridList.nodes)
         {
             freeNodes.Add(node);
             _nodes.Add(node.gridPosition, node);
-            Debug.Log("Eklendi");
-            
         }
-        GameManager.Instance.ChangeState(GameState.SpawningBlocks);
+        
+    }
+    public List<Node> GenerateGrid()
+    {
+       GameObject gridGameObject=Instantiate(gridPrefab, Vector3.zero, Quaternion.identity);
+       
+        for (int x = 0; x < _width; x++)
+        {
+            for (int y = 0; y < _height; y++)
+            {
+                var node = Instantiate(_nodePrefab, new Vector3(x, y), Quaternion.identity,gridGameObject.transform);
+                node.gridPosition = new Vector2Int(x, y);
+                _nodes[node.gridPosition] = node;
+
+                freeNodes.Add(node);
+            }
+        }
+
+        var center = new Vector2((float)_width / 2 - 0.5f, (float)_height / 2 - 0.5f);
+        var board = Instantiate(_boardPrefab, center, Quaternion.identity);
+        board.transform.SetParent(gridGameObject.transform);
+        board.transform.localScale = new Vector3(_width+0.25f, _height+0.25f, 1);
+        cameraFitter.FitCameraToGrid(_width, _height, gridGameObject.transform);
+        return freeNodes;
     }
 
     public void UpdateGrid()
     {
-        //if (GameManager.Instance._state != GameManager.GameState.Falling) return;
-        freeNodes.Clear(); // Önce freeNodes listesini temizle, en güncel haliyle ekleyelim
-
+        freeNodes.Clear();
         for (int x = 0; x < _width; x++)
         {
             int emptyY = -1; // İlk boş hücreyi saklayacak değişken
@@ -75,7 +101,6 @@ public class GridManager : MonoBehaviour
                 {
                     if (emptyY == -1) emptyY = y; // İlk boş hücreyi bul
                     freeNodes.Add(currentNode); // Boş hücreyi freeNodes listesine ekle
-                    //Debug.Log("11111");
                     continue;
                 }
 
