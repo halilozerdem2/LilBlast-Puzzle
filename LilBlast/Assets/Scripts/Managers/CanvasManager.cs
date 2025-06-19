@@ -5,6 +5,7 @@ public class CanvasManager : MonoBehaviour
 {
     [SerializeField] LevelManager _levelmanager;
     [SerializeField] GameObject explanationPanel;
+    [SerializeField] GameObject settingsPanel;
     [SerializeField] GameObject mainMenuPanel;
     [SerializeField] GameObject gamePanel;
     [SerializeField] GameObject lostPanel;
@@ -32,6 +33,12 @@ public class CanvasManager : MonoBehaviour
         DeactivateAllPanels();
         winPanel.SetActive(true);
         Time.timeScale = 0f;
+    }
+    public void ActivateSettingsPanel()
+    {
+        Time.timeScale = 0f;
+        GameManager.Instance.ChangeState(GameManager.GameState.Pause);
+        settingsPanel.SetActive(true);
     }
     public void ActivateLevelsPanel()
     {
@@ -72,13 +79,7 @@ public class CanvasManager : MonoBehaviour
         Time.timeScale = 1f;
     }
 
-    public void PlayAgain()
-    {
-        SceneManager.LoadScene(LevelManager.GetLastCompletedLevel()-1);
-        GameManager.Instance.ChangeState(GameManager.GameState.Play);
-        DeactivateAllPanels();
-        gamePanel.SetActive(true);
-    }
+    
     public void Resume()
     {
         DeactivateAllPanels();
@@ -119,11 +120,18 @@ public class CanvasManager : MonoBehaviour
     {
         shuffle.HandleShuffle(true);
     }
-
+    public void PlayAgain()
+    {
+        SceneManager.LoadScene(LevelManager.GetLastCompletedLevel()-1);
+        GameManager.Instance.ChangeState(GameManager.GameState.Play);
+        DeactivateAllPanels();
+        gamePanel.SetActive(true);
+    }
     public void NextLevel()
     {
-        DeactivateAllPanels();
+        SceneManager.LoadScene(LevelManager.GetLastCompletedLevel());
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
+        DeactivateAllPanels();
         gamePanel.SetActive(true);
     }
 
@@ -133,6 +141,12 @@ public class CanvasManager : MonoBehaviour
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
         DeactivateAllPanels();
         gamePanel.SetActive(true);
+    }
+
+    public void ResumeTime()
+    {
+        Time.timeScale = 1f;
+        GameManager.Instance.ChangeState(GameManager.GameState.WaitingInput);
     }
     
 }

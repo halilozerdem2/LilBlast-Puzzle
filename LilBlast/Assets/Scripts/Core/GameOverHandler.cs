@@ -53,6 +53,8 @@ public class GameOverHandler : MonoBehaviour
 
         if (collectedBlocks.Count >= targetBlockCount)
         {
+            int playerScore = ScoreManager.Instance.currentScore;
+            int starsEarned = WinManager.Instance.CalculateStarCount(playerScore);
             GameManager.Instance.ChangeState(GameManager.GameState.Win);
         }
         else if (moves <= 0)

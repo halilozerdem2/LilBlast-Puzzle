@@ -4,29 +4,31 @@ using UnityEngine;
 public class ObjectPool : MonoBehaviour
 {
     public static ObjectPool Instance;
+
+    [Header("Prefabs")]
     public GameObject[] particlePrefabs;
     public GameObject[] blockPrefabs;
-    public AudioClip[] audioClips; // Ses efektleri için
+
+    [Header("Audio")]
+    public AudioClip[] audioClips;
     public int poolSize = 10;
     public Transform pools;
 
     private Dictionary<int, Queue<GameObject>> particlePools = new Dictionary<int, Queue<GameObject>>();
-    //private Dictionary<int, Queue<GameObject>> blockPools = new Dictionary<int, Queue<GameObject>>();
     private AudioSource audioSource;
 
     void Awake()
     {
         Instance = this;
-        
         audioSource = gameObject.AddComponent<AudioSource>();
         InitializePools();
     }
 
-    void InitializePools()
+    private void InitializePools()
     {
-        if (particlePrefabs.Length == 0 || blockPrefabs.Length == 0)
+        if (particlePrefabs.Length == 0)
         {
-            Debug.LogError("ObjectPool: Prefabs are missing!");
+            Debug.LogError("ObjectPool: Particle prefabs missing!");
             return;
         }
 
@@ -34,12 +36,6 @@ public class ObjectPool : MonoBehaviour
         {
             particlePools[i] = CreatePool(particlePrefabs[i]);
         }
-       /*
-        for (int i = 0; i < blockPrefabs.Length; i++)
-        {
-            blockPools[i] = CreatePool(blockPrefabs[i]);
-        }
-       */
     }
 
     private Queue<GameObject> CreatePool(GameObject prefab)
@@ -48,7 +44,7 @@ public class ObjectPool : MonoBehaviour
 
         for (int j = 0; j < poolSize; j++)
         {
-            GameObject obj = Instantiate(prefab,pools.transform);
+            GameObject obj = Instantiate(prefab, pools.transform);
             obj.SetActive(false);
             pool.Enqueue(obj);
         }
@@ -68,31 +64,20 @@ public class ObjectPool : MonoBehaviour
         if (obj == null) return null;
 
         ParticleSystem ps = obj.GetComponent<ParticleSystem>();
-        ps.Play();
         if (ps != null)
         {
             ps.Play();
             StartCoroutine(ReturnToPool(obj, particlePools[type], 1f));
         }
 
-        PlaySound(type); // Ses efekti çal
-        return obj;  
+        // 🔉 Ses efekti çal
+        AudioManager.Instance.PlaySFX(type);
+        return obj;
     }
 
-    
     private GameObject GetObjectFromPool(Queue<GameObject> pool, GameObject prefab, Vector3 position, Quaternion rotation)
     {
-        GameObject obj;
-
-        if (pool.Count > 0)
-        {
-            obj = pool.Dequeue();
-        }
-        else
-        {
-            Debug.LogWarning("Object pool is empty! Creating a new instance.");
-            obj = Instantiate(prefab, transform);
-        }
+        GameObject obj = (pool.Count > 0) ? pool.Dequeue() : Instantiate(prefab, pools.transform);
 
         obj.transform.position = position;
         obj.transform.rotation = rotation;
@@ -112,32 +97,7 @@ public class ObjectPool : MonoBehaviour
     private System.Collections.IEnumerator ReturnToPool(GameObject obj, Queue<GameObject> pool, float delay)
     {
         yield return new WaitForSeconds(delay);
-        Debug.Log("Returning to the pool"+ obj.name);
         obj.SetActive(false);
         pool.Enqueue(obj);
     }
-    /*
-    public GameObject GetBlockFromPool(int type, Vector3 position, Quaternion rotation)
-    {
-        if (blockPools.ContainsKey(type) && blockPools[type].Count > 0)
-        {
-            GameObject obj = blockPools[type].Dequeue();
-            obj.transform.position = position;
-            obj.transform.rotation = rotation;
-            obj.SetActive(true);
-            return obj;
-        }
-        else
-        {
-            Debug.LogWarning("Block pool is empty! Consider increasing pool size.");
-            return null;
-        }
-    }
-
-    public void ReturnToBlockPool(int aBlockType,GameObject aBlock)
-    {
-        blockPools[aBlockType].Enqueue(aBlock);
-        aBlock.SetActive(false);
-    }
-    */
 }

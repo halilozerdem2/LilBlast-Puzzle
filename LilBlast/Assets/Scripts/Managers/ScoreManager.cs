@@ -1,11 +1,18 @@
+using System;
 using UnityEngine;
 using TMPro;
 
 public class ScoreManager : MonoBehaviour
 {
+    public static ScoreManager Instance;
     [SerializeField] private TextMeshProUGUI scoreText;
 
-    public int currentScore = 0;
+    public int currentScore =0;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void OnEnable()
     {

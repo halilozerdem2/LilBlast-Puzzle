@@ -33,7 +33,7 @@ public class ShuffleManager : MonoBehaviour
         foreach (var block in blocks)
         {
             block.Shake(0.2f, 0.1f);
-            Node targetNode = AssignNewPosition(block.blockType, availableNodes);
+            Node targetNode = AssignNewPosition(block.blockType, availableNodes,isOrdered);
 
             if (targetNode == null)
             {

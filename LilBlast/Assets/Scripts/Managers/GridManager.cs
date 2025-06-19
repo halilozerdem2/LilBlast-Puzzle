@@ -88,6 +88,7 @@ public class GridManager : MonoBehaviour
 
     public void UpdateGrid()
     {
+        if (GameManager.Instance._state != GameState.Falling) return;
         freeNodes.Clear();
         for (int x = 0; x < _width; x++)
         {

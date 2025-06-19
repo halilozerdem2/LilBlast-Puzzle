@@ -119,7 +119,7 @@ namespace VFXTools
 
 		private void OnDisable()
 		{
-			Debug.Log("disabled" + this.name);
+			//Debug.Log("disabled" + this.name);
 			// Efekti sıfırla ama yeniden başlatma çağrısı yapma
 			transform.localScale = Vector3.zero;
 			transform.position = startPos;

@@ -81,10 +81,10 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Win:
+                canvas.ActivateWinPanel();
                 Reset();
                 LevelManager.SaveLevelProgress(SceneManager.GetActiveScene().buildIndex+1);
                 AudioManager.Instance.StopMusic();
-                canvas.ActivateWinPanel();
                 break;
 
             case GameState.Lose:
