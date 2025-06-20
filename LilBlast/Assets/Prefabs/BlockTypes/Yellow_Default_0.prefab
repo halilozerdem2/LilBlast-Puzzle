@@ -150,6 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IconTypes:
   - {fileID: 7985042018138347892, guid: a90ade7f683964116b0fdf5404a4cb9d, type: 3}
+  - {fileID: 1058165740906613039, guid: 3c08567cf7a13431aa6ebaf593dca8b9, type: 3}
   - {fileID: 414921610477409366, guid: cd986df99988748c8b513b9439acb2b7, type: 3}
   - {fileID: -6038182108957047188, guid: 7e46917b228ed46a49be6fe28c038a69, type: 3}
   - {fileID: -7586140276444505714, guid: b7f432880189a40a1a006b59849bbeb4, type: 3}

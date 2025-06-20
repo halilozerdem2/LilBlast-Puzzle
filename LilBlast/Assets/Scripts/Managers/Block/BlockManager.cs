@@ -143,8 +143,8 @@ public class BlockManager : MonoBehaviour
                 switch (group.Count)
                 {
                     case 3: CreateSpecialBlock(vRocket, block.node); break;
-                    case 4: CreateSpecialBlock(bomb, block.node); break;
-                    case 5: CreateSpecialBlock(hRocket, block.node); break;
+                    case 4: CreateSpecialBlock(hRocket, block.node); break;
+                    case 5: CreateSpecialBlock(bomb, block.node); break;
                 }
 
                 GameManager.Instance.ChangeState(GameState.Falling);
