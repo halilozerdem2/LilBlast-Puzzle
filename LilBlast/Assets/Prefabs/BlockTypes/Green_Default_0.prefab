@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.0131, z: 0}
-  m_LocalScale: {x: 0.25, y: 0.22, z: 1}
+  m_LocalScale: {x: 0.24, y: 0.22, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -150,7 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IconTypes:
   - {fileID: -7364823422338184377, guid: 5363179ef95c8427c93b2a1668191c48, type: 3}
-  - {fileID: 9107158314953876991, guid: 5b35e2fc0d1244ce0a4fd9b968fca9c8, type: 3}
+  - {fileID: 3291406690555587084, guid: 1451686f7947242a0917ca4d3d2989b3, type: 3}
   - {fileID: 3291406690555587084, guid: 1451686f7947242a0917ca4d3d2989b3, type: 3}
   - {fileID: -2176861220364285743, guid: 3425de220fcb6459f9842ef6084e1dc8, type: 3}
   - {fileID: 6787462199040882907, guid: dbd284c3f95684be1bf48e773e161e15, type: 3}

@@ -16,6 +16,7 @@ public class ShuffleManager : MonoBehaviour
         Instance.ChangeState(GameState.Shuffling);
         foreach (var node in GridManager.Instance._nodes.Values)
         {
+            
             GridManager.freeNodes.Add(node);
             node.OccupiedBlock = null;
         }

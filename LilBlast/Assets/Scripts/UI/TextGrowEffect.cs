@@ -14,6 +14,6 @@ public class TextGrowEffect : MonoBehaviour
         transform.localScale = Vector3.one * startScale;
 
         // Ardından DoTween ile normal scale'a getir
-        transform.DOScale(Vector3.one*3f, duration).SetEase(easeType);
+        transform.DOScale(Vector3.one*3.5f, duration).SetEase(easeType);
     }
 }

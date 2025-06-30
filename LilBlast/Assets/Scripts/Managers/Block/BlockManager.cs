@@ -24,7 +24,7 @@ public class BlockManager : MonoBehaviour
 
     [SerializeField] private GameOverHandler handler;
     [SerializeField] private ScoreManager score; 
-    public GameObject bomb ,vRocket, hRocket;
+    public GameObject bomb ,vRocket, hRocket,colorBomb;
 
     private int minBlastableBlockGroupSize = 2;
 
@@ -142,9 +142,12 @@ public class BlockManager : MonoBehaviour
 
                 switch (group.Count)
                 {
+                    case 1: break;
+                    case 2: break;
                     case 3: CreateSpecialBlock(vRocket, block.node); break;
                     case 4: CreateSpecialBlock(hRocket, block.node); break;
                     case 5: CreateSpecialBlock(bomb, block.node); break;
+                    default: CreateSpecialBlock(colorBomb, block.node,block.blockType); break;
                 }
 
                 GameManager.Instance.ChangeState(GameState.Falling);
@@ -164,17 +167,34 @@ public class BlockManager : MonoBehaviour
     }
 
 
-    private void CreateSpecialBlock(GameObject specialBlock, Node aNode)
+    private void CreateSpecialBlock(GameObject specialBlock, Node aNode, int blockType = -1)
     {
-        var specialBlockObject = Instantiate(specialBlock, aNode.Pos, Quaternion.identity,aNode.transform);
+        var specialBlockObject = Instantiate(specialBlock, aNode.Pos, Quaternion.identity, aNode.transform);
         Block b = specialBlockObject.GetComponent<Block>();
+
+        // Eğer bu block bir ColorBombBlock ise targetColorType ata
+        ColorBombBlock colorBombBlock = b as ColorBombBlock;
+        if (colorBombBlock != null && blockType != -1)
+        {
+            colorBombBlock.targetColorType = blockType;
+        
+            // İstersen ColorBomb’un rengini de değiştir
+            SpriteRenderer sr = colorBombBlock.GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                // blockType'a göre bir renk tablosu kullanabilirsin
+                //sr.color = BlockTypeToColor(blockType);
+            }
+        }
+
         b.SetBlock(aNode);
         blocks.Add(b);
+
         Vector3 initialSize = b.transform.localScale;
-        // DOTween ile ölçek animasyonu
         specialBlockObject.transform.localScale = Vector3.zero;
         specialBlockObject.transform.DOScale(initialSize, 0.7f).SetEase(Ease.OutBack);
     }
+
 
     private void BlastRegularBlocks(HashSet<Block> aBlockGroup)
     {
@@ -199,6 +219,7 @@ public class BlockManager : MonoBehaviour
         while (specialBlocks.Count > 0)
         {
             Block specialBlock = specialBlocks.Dequeue();
+            
             specialBlock.isBeingDestroyed = true;
             HashSet<Block> blockGroup = specialBlock.DetermineGroup();
 

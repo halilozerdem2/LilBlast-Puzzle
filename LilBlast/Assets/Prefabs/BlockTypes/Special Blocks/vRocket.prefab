@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6660801491848553797}
   - component: {fileID: 3876964471558161001}
   - component: {fileID: 2191439029533090067}
+  - component: {fileID: 1599031371314911240}
   m_Layer: 0
   m_Name: vRocket
   m_TagString: Untagged
@@ -152,3 +153,19 @@ MonoBehaviour:
   group: []
   blockType: 7
   isBeingDestroyed: 0
+--- !u!114 &1599031371314911240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7313523251230437707}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3836812b31ea644bd8498fb41dbc498a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scaleAxis: 2
+  speed: 2.5
+  amplitude: 0.13
+  invert: 0

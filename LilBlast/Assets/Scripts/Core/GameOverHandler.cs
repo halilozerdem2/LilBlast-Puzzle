@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System.Collections;
 using UnityEngine.UI;
 
 public class GameOverHandler : MonoBehaviour
@@ -53,9 +54,8 @@ public class GameOverHandler : MonoBehaviour
 
         if (collectedBlocks.Count >= targetBlockCount)
         {
-            int playerScore = ScoreManager.Instance.currentScore;
-            int starsEarned = WinManager.Instance.CalculateStarCount(playerScore);
-            GameManager.Instance.ChangeState(GameManager.GameState.Win);
+            StartCoroutine(DelayedWinPanel(3f));
+            UpdateUI(true);
         }
         else if (moves <= 0)
         {
@@ -65,7 +65,7 @@ public class GameOverHandler : MonoBehaviour
         UpdateUI();
     }
 
-    private void UpdateUI()
+    private void UpdateUI(bool isWin = false)
     {
         movesCountText.text = moves.ToString();
         collectedBlockCountText.text = (currentTarget).ToString();
@@ -74,6 +74,20 @@ public class GameOverHandler : MonoBehaviour
         {
             targetBlock.texture = blockIcons[targetBlockType].texture;
         }
+
+        if (isWin)
+        {
+            movesCountText.text = 0.ToString();
+        }
+    }
+    
+    private IEnumerator DelayedWinPanel(float delay)
+    {
+        int playerScore = ScoreManager.Instance.currentScore;
+        int starsEarned = WinManager.Instance.CalculateStarCount(playerScore);
+        yield return new WaitForSeconds(delay);
+        GameManager.Instance.ChangeState(GameManager.GameState.Win);
+        
     }
 
     public void DecreaseMove()
