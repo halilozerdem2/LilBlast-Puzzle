@@ -12,6 +12,10 @@ public class CanvasManager : MonoBehaviour
     [SerializeField] GameObject winPanel;
     [SerializeField] GameObject pausePanel;
     [SerializeField] GameObject levelsPanel;
+    public GameObject bombanimation;
+
+
+    [SerializeField] private LowerPanelButtonHandler lowerPanelButtonHandler;
 
     ShuffleManager shuffle;
     private void Awake()
@@ -70,7 +74,7 @@ public class CanvasManager : MonoBehaviour
     public void DeactivateAllPanels()
     {
         explanationPanel.SetActive(false);
-        levelsPanel.SetActive(false);
+        //levelsPanel.SetActive(false);
         mainMenuPanel.SetActive(false);
         gamePanel.SetActive(false);
         lostPanel.SetActive(false);
@@ -99,6 +103,8 @@ public class CanvasManager : MonoBehaviour
     }
     public void Play()
     {
+        string activeButtonName = lowerPanelButtonHandler.GetActiveButtonName();
+        if (activeButtonName != "Play Button") return;
         SceneManager.LoadScene(LevelManager.GetLastCompletedLevel());
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
         DeactivateAllPanels();
@@ -147,6 +153,15 @@ public class CanvasManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         GameManager.Instance.ChangeState(GameManager.GameState.WaitingInput);
+    }
+    public void OnBlastAllPowerUpClicked()
+    {
+        Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, Camera.main.nearClipPlane + 5f);
+        
+        // Ekran koordinatını dünya koordinatına çevir
+        Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenCenter);
+        Instantiate(bombanimation,worldPos, Quaternion.identity,this.transform);
+        BlockManager.Instance.BlastAllBlocks();
     }
     
 }

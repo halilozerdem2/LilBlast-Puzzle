@@ -1,5 +1,7 @@
 using UnityEngine;
 using System;
+using DG.Tweening;
+using System.Collections;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
@@ -65,6 +67,12 @@ public class GameManager : MonoBehaviour
             case GameState.WaitingInput:
                 BlockManager.Instance.FindAllNeighbours();
                 OnGridReady?.Invoke();
+
+                if (handler.pendingWin)
+                {
+                    handler.pendingWin = false;
+                    ChangeState(GameState.Win);
+                }
                 break;
 
             case GameState.Blasting:
@@ -81,11 +89,10 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Win:
-                canvas.ActivateWinPanel();
-                Reset();
-                LevelManager.SaveLevelProgress(SceneManager.GetActiveScene().buildIndex+1);
-                AudioManager.Instance.StopMusic();
+                AudioManager.Instance.PlayVictorySound();
+                StartCoroutine(PlayWinSequence());
                 break;
+
 
             case GameState.Lose:
                 Reset();
@@ -120,23 +127,20 @@ public class GameManager : MonoBehaviour
         shuffle.availableNodes.Clear();
         score.ResetScore();
     }
-
-    private void OnEnable()
+    
+    private IEnumerator PlayWinSequence()
     {
-        GameManager.OnStateChanged += HandleGameStateChanged;
-    }
+        LevelManager.SaveLevelProgress(SceneManager.GetActiveScene().buildIndex);
+        yield return new WaitForSeconds(1f);
+        BlockManager.Instance.BlastAllBlocks(false);
+        Debug.Log("Win sequence started!");
+        
+        yield return new WaitForSeconds(3.0f);
 
-    private void OnDisable()
-    {
-        GameManager.OnStateChanged -= HandleGameStateChanged;
-    }
+        canvas.ActivateWinPanel();
 
-    private void HandleGameStateChanged(GameManager.GameState state)
-    {
-        if (state == GameManager.GameState.Play)
-        {
-            Debug.Log("Game has entered PLAY state!");
-        }
+        Reset();
+        AudioManager.Instance.isVictoryMode=false;
     }
 
 

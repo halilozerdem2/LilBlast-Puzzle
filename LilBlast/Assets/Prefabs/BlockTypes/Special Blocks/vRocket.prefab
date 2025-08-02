@@ -165,7 +165,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3836812b31ea644bd8498fb41dbc498a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scaleAxis: 2
+  scaleAxis: 1
   speed: 2.5
   amplitude: 0.13
   invert: 0

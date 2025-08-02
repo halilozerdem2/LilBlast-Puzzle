@@ -17,9 +17,9 @@ public class WinManager : MonoBehaviour
     /// </summary>
     public int CalculateStarCount(int score)
     {
-        if (score >= 8000)
+        if (score >= 7000)
             return 3;
-        else if (score >= 6000)
+        else if (score >= 5000)
             return 2;
         else 
             return 1;

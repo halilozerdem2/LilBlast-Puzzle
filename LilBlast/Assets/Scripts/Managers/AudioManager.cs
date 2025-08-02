@@ -7,19 +7,21 @@ public class AudioManager : MonoBehaviour
     [Header("Music Clips")]
     [SerializeField] private AudioClip mainMenuMusic;
     [SerializeField] private AudioClip[] gameSceneMusic;
+    [SerializeField] AudioClip victoryMusic;
 
     [Header("Audio Sources")]
     [SerializeField] private AudioSource musicSource;
     [SerializeField] private AudioSource sfxSource;
 
     private int currentTrackIndex = 0;
+    public bool isVictoryMode = false;
+
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
             InitializeAudioSources();
             LoadSettings();
         }
@@ -36,11 +38,14 @@ public class AudioManager : MonoBehaviour
 
     private void Update()
     {
+        if (isVictoryMode) return;
+
         if (!musicSource.isPlaying && gameSceneMusic.Length > 0)
         {
             PlayNextGameTrack();
         }
     }
+
 
     private void InitializeAudioSources()
     {
@@ -125,4 +130,13 @@ public class AudioManager : MonoBehaviour
         if (!IsSFXOn()) return;
         ObjectPool.Instance?.PlaySound(type);
     }
+    
+    public void PlayVictorySound()
+    {
+        StopMusic();
+        isVictoryMode = true;
+        sfxSource.PlayOneShot(victoryMusic);
+        Debug.Log("Victory sound played!");
+    }
+
 }

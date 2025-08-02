@@ -15,6 +15,7 @@ public class GameOverHandler : MonoBehaviour
     private int targetBlockCount;
     public int targetBlockType;
     private int currentTarget;
+    public bool pendingWin=false;
 
     public List<Block> collectedBlocks;
     public List<Block> blastedBlocks;
@@ -50,19 +51,21 @@ public class GameOverHandler : MonoBehaviour
         if (aTargetBlock.blockType == targetBlockType)
         {
             collectedBlocks.Add(aTargetBlock);
+            UpdateUI();
         }
 
         if (collectedBlocks.Count >= targetBlockCount)
         {
-            StartCoroutine(DelayedWinPanel(3f));
+            pendingWin = true;
             UpdateUI(true);
         }
         else if (moves <= 0)
         {
+            UpdateUI();
             GameManager.Instance.ChangeState(GameManager.GameState.Lose);
         }
 
-        UpdateUI();
+        
     }
 
     private void UpdateUI(bool isWin = false)
@@ -80,15 +83,6 @@ public class GameOverHandler : MonoBehaviour
             movesCountText.text = 0.ToString();
         }
     }
-    
-    private IEnumerator DelayedWinPanel(float delay)
-    {
-        int playerScore = ScoreManager.Instance.currentScore;
-        int starsEarned = WinManager.Instance.CalculateStarCount(playerScore);
-        yield return new WaitForSeconds(delay);
-        GameManager.Instance.ChangeState(GameManager.GameState.Win);
-        
-    }
 
     public void DecreaseMove()
     {
@@ -105,4 +99,3 @@ public class GameOverHandler : MonoBehaviour
         UpdateUI();
     }
 }
- 

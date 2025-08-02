@@ -86,6 +86,7 @@ public class BlockManager : MonoBehaviour
     {
         yield return new WaitForSeconds(0.51f);
        // Debug.Log("Block spawnland |: boş hücre sayısı : " + GridManager.freeNodes.Count);
+       //if(GameManager.Instance._state==GameState.Win)
         if (HasValidMoves())
             GameManager.Instance.ChangeState(GameState.WaitingInput);
         else
@@ -281,6 +282,82 @@ public class BlockManager : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         Destroy(aGameObject);
     }
+    
+    
+    
+    public void BlastAllBlocks(bool simultaneous = true)
+    {
+        if (GameManager.Instance._state == GameState.WaitingInput || GameManager.Instance._state == GameState.Win)
+        {
+            Debug.Log("Tüm bloklar yok ediliyor!");
+
+            handler.DecreaseMove();
+
+            GameManager.Instance.ChangeState(GameState.Blasting);
+
+            if (simultaneous)
+                StartCoroutine(BlastAllBlocksSimultaneousRoutine());
+            else
+                StartCoroutine(BlastAllBlocksSequentialRoutine());
+        }
+        
+
+       
+    }
+
+    private IEnumerator BlastAllBlocksSimultaneousRoutine()
+    {
+        List<Block> allBlocks = new List<Block>(blocks);
+
+        // Hepsi için shake veya efekt tetikle
+        foreach (var b in allBlocks)
+        {
+            if (b != null && !b.isBeingDestroyed)
+            {
+                b.isBeingDestroyed = true;
+                b.Shake(0.2f, 0.15f);
+            }
+        }
+
+        yield return new WaitForSeconds(0.21f);
+
+        foreach (var b in allBlocks)
+        {
+            if (b != null)
+            {
+                if (b is RegularBlock)
+                    regularBlocks.Remove(b as RegularBlock);
+
+                if (b.blockType == handler.targetBlockType)
+                    handler.UpdateTarget(b, 1);
+
+                BlastBlock(b);
+            }
+        }
+
+        GameManager.Instance.ChangeState(GameState.Falling);
+    }
+
+    private IEnumerator BlastAllBlocksSequentialRoutine()
+    {
+        List<Block> allBlocks = new List<Block>(blocks);
+
+        foreach (var b in allBlocks)
+        {
+            if (b != null && !b.isBeingDestroyed)
+            {
+                b.isBeingDestroyed = true;
+                if (b is RegularBlock)
+                    regularBlocks.Remove(b as RegularBlock);
+                
+                yield return new WaitForSeconds(0.02f);
+                BlastBlock(b);
+            }
+        }
+        
+        GameManager.Instance.ChangeState(GameState.Pause);
+    }
+
     
 }
 
