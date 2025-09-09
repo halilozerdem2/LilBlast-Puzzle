@@ -9,14 +9,22 @@ public class AuthUIManager : MonoBehaviour
     public TMP_InputField loginUsernameInput;
     public TMP_InputField loginPasswordInput;
     public Button loginButton;
-    public TextMeshProUGUI loginErrorText;
 
     [Header("Register UI")]
     public TMP_InputField registerUsernameInput;
     public TMP_InputField registerPasswordInput;
     public TMP_InputField registerEmailInput;
     public Button registerButton;
-    public TextMeshProUGUI registerErrorText;
+
+    public AuthWarningManager authWarningManager; // Inspector'dan atayın
+
+    // Username kontrolü için örnek fonksiyon (backend ile async kontrol önerilir)
+    private bool IsUsernameTaken(string username)
+    {
+        // Burada backend sorgusu ile kontrol etmelisiniz.
+        // Şimdilik false dönelim (kullanıcı adı alınmamış gibi)
+        return false;
+    }
 
     private void Start()
     {
@@ -24,46 +32,60 @@ public class AuthUIManager : MonoBehaviour
         registerButton.onClick.AddListener(OnRegisterClicked);
     }
 
-    private void OnLoginClicked()
+    public void OnLoginClicked()
     {
-        loginErrorText.text = "";
-        var loginRequest = new LoginRequest
-        {
-            Username = loginUsernameInput.text,
-            Password = loginPasswordInput.text
-        };
+        string username = loginUsernameInput.text;
+        string password = loginPasswordInput.text;
+
+        if (!authWarningManager.ValidateLogin(username, password))
+            return;
+
+        // Buraya kadar geldiyse giriş kuralları sağlanmıştır, login işlemini başlatabilirsiniz
         StartCoroutine(ApiManager.Instance.PostRequest<LoginRequest, User>(
             "/api/auth/login",
-            loginRequest,
+            new LoginRequest { Username = username, Password = password },
             user =>
             {
                 PlayerDataManager.Instance.SetUser(user);
                 PlayerUIManager.Instance.UpdateUI();
+                StartCoroutine(Deactive());
+                
             },
-            error => loginErrorText.text = "Login failed: " + error,
-            welcomeMsg => loginErrorText.text = welcomeMsg
+            error =>
+            {
+                authWarningManager.ShowLoginFailed();
+            }
         ));
     }
 
-    private void OnRegisterClicked()
+    IEnumerator Deactive()
     {
-        registerErrorText.text = "";
-        var registerRequest = new RegisterRequest
-        {
-            Username = registerUsernameInput.text,
-            Password = registerPasswordInput.text,
-            Email = registerEmailInput.text
-        };
+        yield return new WaitForSeconds(2f);
+        this.gameObject.SetActive(false);
+    }
+    public void OnRegisterClicked()
+    {
+        string username = registerUsernameInput.text;
+        string email = registerEmailInput.text;
+        string password = registerPasswordInput.text;
+
+        if (!authWarningManager.ValidateRegister(username, email, password, IsUsernameTaken))
+            return;
+
+        // Buraya kadar geldiyse kayıt kuralları sağlanmıştır, register işlemini başlatabilirsiniz
         StartCoroutine(ApiManager.Instance.PostRequest<RegisterRequest, User>(
             "/api/auth/register",
-            registerRequest,
+            new RegisterRequest { Username = username, Password = password, Email = email },
             user =>
             {
                 PlayerDataManager.Instance.SetUser(user);
                 PlayerUIManager.Instance.UpdateUI();
+                StartCoroutine(Deactive());
             },
-            error => registerErrorText.text = "Register failed: " + error,
-            welcomeMsg => registerErrorText.text = welcomeMsg
+            error =>
+            {
+                authWarningManager.ShowWarning("Register failed: " + error);
+            }
         ));
     }
 }

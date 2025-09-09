@@ -9,6 +9,7 @@ public class PlayerDataManager : MonoBehaviour
 {
     public static PlayerDataManager Instance { get; private set; }
     public User CurrentUser { get; private set; }
+    public bool IsLoggedIn => CurrentUser != null;
 
     public static event System.Action OnUserDataChanged;
 
@@ -125,5 +126,20 @@ public class PlayerDataManager : MonoBehaviour
                 Debug.LogError("Gönderilen veri: " + jsonBody);
             }
         ));
+    }
+
+    public void Logout()
+    {
+        CurrentUser = null;
+        OnUserDataChanged?.Invoke();
+
+        // Local cache ve PlayerPrefs temizliği
+        PlayerPrefs.DeleteKey("userToken");
+        PlayerPrefs.DeleteKey("username");
+        PlayerPrefs.DeleteKey("email");
+        PlayerPrefs.DeleteKey("passwordHash");
+        PlayerPrefs.Save();
+
+        // Eğer başka cache veya dosya varsa onları da burada temizleyin
     }
 }

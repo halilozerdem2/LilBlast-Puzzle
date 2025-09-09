@@ -29,18 +29,46 @@ public class PlayerUIManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
     }
+
     private void OnEnable()
     {
-        // Kullanıcı giriş yapmamışsa UI güncellenmesin ve hata alınmasın
+        PlayerDataManager.OnUserDataChanged += OnUserDataChanged;
         if (PlayerDataManager.Instance == null ||
             PlayerDataManager.Instance.CurrentUser == null ||
             PlayerDataManager.Instance.CurrentUser.Stats == null ||
             PlayerDataManager.Instance.CurrentUser.PowerUps == null)
         {
+            ResetUI();
             return;
         }
-
         UpdateUI();
+    }
+
+    private void OnDisable()
+    {
+        PlayerDataManager.OnUserDataChanged -= OnUserDataChanged;
+    }
+
+    private void OnUserDataChanged()
+    {
+        var user = PlayerDataManager.Instance.CurrentUser;
+        if (user == null || user.Stats == null || user.PowerUps == null)
+            ResetUI();
+        else
+            UpdateUI();
+    }
+
+    public void ResetUI()
+    {
+        StopAllCoroutines();
+        displayedCoins = displayedLives = displayedShuffle = displayedPowerShuffle = displayedModify = displayedDestroy = 0;
+        if (coinsText != null) coinsText.text = "0";
+        if (livesText != null) livesText.text = "0";
+        if (shuffleText != null) shuffleText.text = "0";
+        if (powerShuffleText != null) powerShuffleText.text = "0";
+        if (modifyText != null) modifyText.text = "0";
+        if (destroyText != null) destroyText.text = "0";
+        if (usernameText != null) usernameText.text = "User";
     }
 
     public void UpdateUI()
