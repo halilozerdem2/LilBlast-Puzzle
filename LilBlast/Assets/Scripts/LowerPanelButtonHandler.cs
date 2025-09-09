@@ -25,7 +25,7 @@ public class LowerPanelButtonHandler : MonoBehaviour
     [SerializeField] private string activeHexColor = "#FFD700"; // Örnek: Altın rengi
     [SerializeField] private Color inactiveColor = Color.white;
 
-    private MenuButton activeButton;
+    public MenuButton activeButton;
     private Color activeColor;
 
     private void Awake()
@@ -94,11 +94,6 @@ public class LowerPanelButtonHandler : MonoBehaviour
     {
         activeButton.name = buttonName;
     }
-    void Update()
-    {
-        Debug.Log(activeButton.name);
-    }
-
-
+   
 }
 

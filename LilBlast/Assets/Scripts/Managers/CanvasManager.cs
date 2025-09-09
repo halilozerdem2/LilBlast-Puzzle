@@ -103,8 +103,8 @@ public class CanvasManager : MonoBehaviour
     }
     public void Play()
     {
-        string activeButtonName = lowerPanelButtonHandler.GetActiveButtonName();
-        if (activeButtonName != "Play Button") return;
+        if (lowerPanelButtonHandler.activeButton.name != "Play Button") return; 
+
         SceneManager.LoadScene(LevelManager.GetLastCompletedLevel());
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
         DeactivateAllPanels();
@@ -117,15 +117,6 @@ public class CanvasManager : MonoBehaviour
         Application.Quit();
     }
 
-    public void Shuffle()
-    {
-        shuffle.HandleShuffle();
-    }
-
-    public void Order()
-    {
-        shuffle.HandleShuffle(true);
-    }
     public void PlayAgain()
     {
         SceneManager.LoadScene(LevelManager.GetLastCompletedLevel()-1);
@@ -153,15 +144,6 @@ public class CanvasManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         GameManager.Instance.ChangeState(GameManager.GameState.WaitingInput);
-    }
-    public void OnBlastAllPowerUpClicked()
-    {
-        Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, Camera.main.nearClipPlane + 5f);
-        
-        // Ekran koordinatını dünya koordinatına çevir
-        Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenCenter);
-        Instantiate(bombanimation,worldPos, Quaternion.identity,this.transform);
-        BlockManager.Instance.BlastAllBlocks();
     }
     
 }
