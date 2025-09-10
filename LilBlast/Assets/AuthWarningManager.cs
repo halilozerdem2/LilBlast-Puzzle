@@ -21,13 +21,13 @@ public class AuthWarningManager : MonoBehaviour
     {
         if (warningPanel == null || warningText == null) return;
 
-        warningText.text = message;
         warningPanel.SetActive(true);
+        warningText.text = message;
 
         if (hideCoroutine != null)
             StopCoroutine(hideCoroutine);
 
-        hideCoroutine = StartCoroutine(HideWarningAfterDelay(4f));
+        hideCoroutine = StartCoroutine(HideWarningAfterDelay(2f));
     }
 
     private IEnumerator HideWarningAfterDelay(float delay)
@@ -74,7 +74,8 @@ public class AuthWarningManager : MonoBehaviour
             ShowWarning("Password must be at least 6 characters.");
             return false;
         }
-        ShowWarning("Welcome " + username + "!");
+        ShowWarning("Welcome " + username+ "!");
+
         return true;
     }
 
