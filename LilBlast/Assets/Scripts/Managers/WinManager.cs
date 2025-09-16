@@ -11,10 +11,7 @@ public class WinManager : MonoBehaviour
         else
             Destroy(gameObject);
     }
-
-    /// <summary>
-    /// Skora göre yıldız sayısını döner.
-    /// </summary>
+    
     public int CalculateStarCount(int score)
     {
         if (score >= 7000)

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Analytics;
 using UnityEngine.SceneManagement;
@@ -11,7 +12,8 @@ public class CanvasManager : MonoBehaviour
     [SerializeField] GameObject lostPanel;
     [SerializeField] GameObject winPanel;
     [SerializeField] GameObject pausePanel;
-    [SerializeField] GameObject levelsPanel;
+
+    [SerializeField] GameOverHandler handler;
     public GameObject bombanimation;
 
 
@@ -27,89 +29,75 @@ public class CanvasManager : MonoBehaviour
     public void ActivateMainMenu()
     {
         GameManager.Instance.ChangeState(GameManager.GameState.Menu);
-        Time.timeScale = 0f;
         DeactivateAllPanels();
-        mainMenuPanel.SetActive(true);
+        OpenPanel(mainMenuPanel);
     }
 
     public void ActivateWinPanel()
     {
         DeactivateAllPanels();
-        winPanel.SetActive(true);
+        OpenPanel(winPanel);
         Time.timeScale = 0f;
     }
     public void ActivateSettingsPanel()
     {
         Time.timeScale = 0f;
         GameManager.Instance.ChangeState(GameManager.GameState.Pause);
-        settingsPanel.SetActive(true);
-    }
-    public void ActivateLevelsPanel()
-    {
-        DeactivateAllPanels();
-        levelsPanel.SetActive(true);
-        Time.timeScale = 0f;
+        OpenPanel(settingsPanel);
     }
     public void Inform()
     {
         //DeactivateAllPanels();
-        explanationPanel.SetActive(true);
+        OpenPanel(explanationPanel);
         Time.timeScale = 0f;
     }
     public void Pause()
     {
         GameManager.Instance.ChangeState(GameManager.GameState.Pause);
         DeactivateAllPanels();
-        pausePanel.SetActive(true);
-        Time.timeScale = 0f;
+        OpenPanel(pausePanel);
     }
 
     public void ActivateLostPanel()
     {
-        DeactivateAllPanels();
-        levelsPanel.SetActive(true);
+        OpenPanel(lostPanel);
         Time.timeScale = 0f;
     }
 
     public void DeactivateAllPanels()
     {
-        explanationPanel.SetActive(false);
-        //levelsPanel.SetActive(false);
-        mainMenuPanel.SetActive(false);
-        gamePanel.SetActive(false);
-        lostPanel.SetActive(false);
-        winPanel.SetActive(false);
-        pausePanel.SetActive(false);
-        Time.timeScale = 1f;
+        ClosePanel(explanationPanel);
+        ClosePanel(mainMenuPanel);
+        ClosePanel(gamePanel);
+        ClosePanel(lostPanel);
+        ClosePanel(winPanel);
+        ClosePanel(pausePanel);
     }
 
     
     public void Resume()
     {
         DeactivateAllPanels();
-        gamePanel.SetActive(true);
-        pausePanel.SetActive(false);
-        GameManager.Instance.ChangeState(GameManager.GameState.WaitingInput);
+        OpenPanel(gamePanel);
+        GameManager.Instance.ResumeGame();
+
     }
 
     public void TryAgain()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        GameManager.Instance.RestartGame();
+        GameManager.Instance.Reset();
         DeactivateAllPanels();
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
-        GameManager.Instance.RestartGame();
-        gamePanel.SetActive(true);
-
+        OpenPanel(gamePanel);
     }
     public void Play()
     {
         if (lowerPanelButtonHandler.activeButton.name != "Play Button") return; 
-
-        SceneManager.LoadScene(LevelManager.GetLastCompletedLevel());
+        SceneManager.LoadScene(LevelManager.GetLastCompletedLevel()+1);
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
         DeactivateAllPanels();
-        gamePanel.SetActive(true);
-
+        OpenPanel(gamePanel);
     }
 
     public void Quit()
@@ -119,23 +107,25 @@ public class CanvasManager : MonoBehaviour
 
     public void PlayAgain()
     {
-        SceneManager.LoadScene(LevelManager.GetLastCompletedLevel()-1);
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
+        SceneManager.LoadScene(LevelManager.GetLastCompletedLevel());
+        GameManager.Instance.ResumeGame();
         DeactivateAllPanels();
         gamePanel.SetActive(true);
     }
     public void NextLevel()
     {
-        SceneManager.LoadScene(LevelManager.GetLastCompletedLevel());
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
+        SceneManager.LoadScene(LevelManager.GetLastCompletedLevel()+1);
+        GameManager.Instance.ResumeGame();
         DeactivateAllPanels();
         gamePanel.SetActive(true);
     }
 
     public void LoadLevel(int levelIndex)
     {
-        _levelmanager.LoadLevel(levelIndex);
         GameManager.Instance.ChangeState(GameManager.GameState.Play);
+        _levelmanager.LoadLevel(levelIndex);
         DeactivateAllPanels();
         gamePanel.SetActive(true);
     }
@@ -144,6 +134,30 @@ public class CanvasManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         GameManager.Instance.ChangeState(GameManager.GameState.WaitingInput);
+    }
+//-------------------------New coding Logic---------------------------
+    private void OpenPanel(GameObject aPanel)
+    {
+        aPanel.SetActive(true);
+    }
+
+    private void ClosePanel(GameObject aPanel)
+    {
+        aPanel.SetActive(false);
+    }
+    
+    public void ContinueByAds()
+    {
+        //Ads Logic
+        GameOverHandler.Instance.moves += 5;
+        Resume();
+    }
+
+    public void ContinueByUsingExtraLife()
+    {
+        //Use Extra Life Logic
+        GameOverHandler.Instance.IncreaseMoves();
+        Resume();
     }
     
 }

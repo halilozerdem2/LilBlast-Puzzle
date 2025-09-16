@@ -20,13 +20,15 @@ public class BlockManager : MonoBehaviour
     public List<Block> blocks;
     public List<Block> blastedBlocks;
     public List<RegularBlock> regularBlocks;
-    public Queue<Block>  specialBlocks;
+    public Queue<Block> specialBlocks;
 
     [SerializeField] private GameOverHandler handler;
-    [SerializeField] private ScoreManager score; 
-    public GameObject bomb ,vRocket, hRocket,colorBomb;
+    [SerializeField] private ScoreManager score;
+    public GameObject bomb, vRocket, hRocket, colorBomb;
 
     private int minBlastableBlockGroupSize = 2;
+    public bool isModifyActive = false;
+    public int modifyTargetType = -1; // Hedef tip (örn. handler.targetBlockType)
 
     private void Awake()
     {
@@ -53,12 +55,12 @@ public class BlockManager : MonoBehaviour
         List<Node> nodesToFill = GridManager.freeNodes.ToList();
         int counter = 0, spawnIndex;
         int targetBlockType = handler.targetBlockType;
-        
+
         foreach (var node in nodesToFill)
         {
             int deadlockIndex = counter % 5; // deadlock için
             int randomIndex = Random.Range(0, blockTypes.Length);
-            
+
             float spawnAccuricyPercentage = Random.Range(0f, 1f);
             if (spawnAccuricyPercentage <= 0.15f)
                 spawnIndex = targetBlockType;
@@ -72,12 +74,12 @@ public class BlockManager : MonoBehaviour
             //Block randomBlock =  ObjectPool.Instance.GetBlockFromPool(spawnIndex, spawnPos, Quaternion.identity);
             counter++; // deadlock için
             randomBlock.SetBlock(node);
-            
+
             blocks.Add(randomBlock);
             regularBlocks.Add(randomBlock as RegularBlock);
-            
+
             randomBlock.transform.DOMove(node.Pos, 0.5f).SetEase(Ease.OutBounce);
-           // Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
+            // Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
         }
         StartCoroutine(CheckValidMoves());
     }
@@ -85,8 +87,8 @@ public class BlockManager : MonoBehaviour
     IEnumerator CheckValidMoves()
     {
         yield return new WaitForSeconds(0.51f);
-       // Debug.Log("Block spawnland |: boş hücre sayısı : " + GridManager.freeNodes.Count);
-       //if(GameManager.Instance._state==GameState.Win)
+        // Debug.Log("Block spawnland |: boş hücre sayısı : " + GridManager.freeNodes.Count);
+        //if(GameManager.Instance._state==GameState.Win)
         if (HasValidMoves())
             GameManager.Instance.ChangeState(GameState.WaitingInput);
         else
@@ -148,7 +150,7 @@ public class BlockManager : MonoBehaviour
                     case 3: CreateSpecialBlock(vRocket, block.node); break;
                     case 4: CreateSpecialBlock(hRocket, block.node); break;
                     case 5: CreateSpecialBlock(bomb, block.node); break;
-                    default: CreateSpecialBlock(colorBomb, block.node,block.blockType); break;
+                    default: CreateSpecialBlock(colorBomb, block.node, block.blockType); break;
                 }
 
                 GameManager.Instance.ChangeState(GameState.Falling);
@@ -162,7 +164,7 @@ public class BlockManager : MonoBehaviour
             BlastSpecialBlocks();
         }
 
-        
+
         block.Shake(0.3f, 0.1f);
         //ObjectPool.Instance.PlaySound(5);
     }
@@ -178,7 +180,7 @@ public class BlockManager : MonoBehaviour
         if (colorBombBlock != null && blockType != -1)
         {
             colorBombBlock.targetColorType = blockType;
-        
+
             // İstersen ColorBomb’un rengini de değiştir
             SpriteRenderer sr = colorBombBlock.GetComponent<SpriteRenderer>();
             if (sr != null)
@@ -220,7 +222,7 @@ public class BlockManager : MonoBehaviour
         while (specialBlocks.Count > 0)
         {
             Block specialBlock = specialBlocks.Dequeue();
-            
+
             specialBlock.isBeingDestroyed = true;
             HashSet<Block> blockGroup = specialBlock.DetermineGroup();
 
@@ -243,20 +245,20 @@ public class BlockManager : MonoBehaviour
             }
             //HighlightGroupBeforeDestroy(blockGroup);
         }
-        
+
 
     }
     IEnumerator ChangeStateDelayed(float aDelay, GameState aState)
     {
         yield return new WaitForSeconds(aDelay);
-       // Debug.Log("a");
+        // Debug.Log("a");
         GameManager.Instance.ChangeState(aState);
 
     }
 
     private IEnumerator DelayedBlastBlock(Block b, float delay)
     {
-        if(b is BombBlock) b.Shake(delay, 0.2f);
+        if (b is BombBlock) b.Shake(delay, 0.2f);
         yield return new WaitForSeconds(delay);
         BlastBlock(b);
 
@@ -274,7 +276,7 @@ public class BlockManager : MonoBehaviour
         ObjectPool.Instance.GetParticleFromPool(b.blockType, b.node.Pos, Quaternion.identity);
 
     }
-    
+
 
 
     IEnumerator DestroyDelayed(GameObject aGameObject)
@@ -282,9 +284,9 @@ public class BlockManager : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         Destroy(aGameObject);
     }
-    
-    
-    
+
+
+
     public void BlastAllBlocks(bool simultaneous = true)
     {
         if (GameManager.Instance._state == GameState.WaitingInput || GameManager.Instance._state == GameState.Win)
@@ -300,9 +302,9 @@ public class BlockManager : MonoBehaviour
             else
                 StartCoroutine(BlastAllBlocksSequentialRoutine());
         }
-        
 
-       
+
+
     }
 
     private IEnumerator BlastAllBlocksSimultaneousRoutine()
@@ -349,15 +351,77 @@ public class BlockManager : MonoBehaviour
                 b.isBeingDestroyed = true;
                 if (b is RegularBlock)
                     regularBlocks.Remove(b as RegularBlock);
-                
+
                 yield return new WaitForSeconds(0.02f);
                 BlastBlock(b);
             }
         }
-        
-        GameManager.Instance.ChangeState(GameState.Pause);
+
     }
 
-    
+    public void SetAllBlocksInteractable(bool interactable)
+    {
+        foreach (var block in blocks)
+        {
+            if (block != null)
+            {
+                Collider2D col = block.GetComponent<Collider2D>();
+                if (col != null)
+                    col.enabled = interactable;
+            }
+        }
+    }
+
+    public void ToggleModifyMode()
+    {
+        isModifyActive = !isModifyActive;
+        modifyTargetType = handler.targetBlockType; // ya da UI'den seçilecek tip
+        Debug.Log("Modify Mode: " + isModifyActive + " | target: " + modifyTargetType);
+    }
+   public void TryModifyBlock(Block block)
+{
+    if (!isModifyActive) return;
+
+    HashSet<Block> group = block.DetermineGroup();
+
+    // Eğer zaten hedef tipteyse powerup boşa gitmesin
+    if (block.blockType == modifyTargetType)
+    {
+        Debug.Log("Grup zaten hedef tipte, Modify harcanmadı.");
+        return;
+    }
+
+    // PowerUp harca
+    PlayerDataManager.Instance.UpdatePowerUp("Modify", -1);
+
+    foreach (var b in group)
+    {
+        Node node = b.node;
+        
+        // Eski bloktan çık
+        BlockType.Instance.RemoveBlock(b.blockType, node.gridPosition);
+        blocks.Remove(b);
+
+        Destroy(b.gameObject);
+
+        // Yeni prefab oluştur
+        GameObject newBlockGO = Instantiate(blockTypes[handler.targetBlockType].gameObject, node.transform.position, Quaternion.identity, transform);
+
+        Block newBlock = newBlockGO.GetComponent<Block>();
+        newBlock.node = node;
+        newBlock.blockType = modifyTargetType;
+
+        // Yeni blok listeye ekle
+        blocks.Add(newBlock);
+        BlockType.Instance.AddBlock(modifyTargetType, node.gridPosition);
+
+        // Node bağla
+        node.OccupiedBlock = newBlock;
+    }
+
+    // İşlem bitince Modify kapanır
+    isModifyActive = false;
+}
+
 }
 

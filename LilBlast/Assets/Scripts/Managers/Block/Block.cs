@@ -33,17 +33,15 @@ public abstract class Block : MonoBehaviour
 
     public abstract HashSet<Block> DetermineGroup();
 
-    private void OnMouseDown()
-    {
-        if (Instance._state == GameState.WaitingInput)
-        {
-            BlockManager.Instance.TryBlastBlock(this);
-        }
-        else
-        {
-            Debug.Log("Failed");
-        }
-    }
+ private void OnMouseDown()
+{
+    if (GameManager.Instance._state != GameState.WaitingInput) return;
+
+    if (BlockManager.Instance.isModifyActive)
+        BlockManager.Instance.TryModifyBlock(this);
+    else
+        BlockManager.Instance.TryBlastBlock(this);
+}
     public List<Block> FindNeighbours()
     {
         List<Block> neighbours = new List<Block>();

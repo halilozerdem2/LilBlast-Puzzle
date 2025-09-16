@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private SpriteRenderer _boardPrefab;
     
     [SerializeField] ShuffleManager shuffle;
+   [SerializeField] PowerUpManager powerUpManager;
     [SerializeField] CanvasManager canvas;
     [SerializeField] ScoreManager score;
     [SerializeField] GameOverHandler handler;
@@ -52,6 +53,7 @@ public class GameManager : MonoBehaviour
             case GameState.Menu:
                 Reset();
                 canvas.ActivateMainMenu();
+                Time.timeScale = 1;
                 AudioManager.Instance.PlayMainMenuMusic();
                 break;
                 
@@ -68,9 +70,9 @@ public class GameManager : MonoBehaviour
                 BlockManager.Instance.FindAllNeighbours();
                 OnGridReady?.Invoke();
 
-                if (handler.pendingWin)
+                if (GameOverHandler.Instance.pendingWin)
                 {
-                    handler.pendingWin = false;
+                    GameOverHandler.Instance.pendingWin = false;
                     ChangeState(GameState.Win);
                 }
                 break;
@@ -82,6 +84,7 @@ public class GameManager : MonoBehaviour
                 GridManager.Instance.UpdateGrid();
                 break;
             case GameState.Pause:
+                PauseGame();
                 break;
             case GameState.Shuffling:
                 shuffle.HandleShuffle();
@@ -89,15 +92,16 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Win:
+                LevelManager.Instance.CompleteLevel(score.currentScore, handler.moves, powerUpManager.CalculateSpentPowerUpAmount());
                 AudioManager.Instance.PlayVictorySound();
                 StartCoroutine(PlayWinSequence());
                 break;
 
 
             case GameState.Lose:
-                Reset();
-                AudioManager.Instance.StopMusic();
-                canvas.ActivateLostPanel();
+                LevelManager.Instance.FailLevel();
+                AudioManager.Instance.PlayLoseSequence();
+                StartCoroutine(ShowLosePanelWithDelay(AudioManager.Instance.loseSFX.length));
                 break;
         }
     }
@@ -105,6 +109,19 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 1;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void PauseGame()
+    {
+        Time.timeScale = 0;
+        BlockManager.Instance.SetAllBlocksInteractable(false);
+    }
+
+    public void ResumeGame()
+    {
+        Time.timeScale = 1;
+        BlockManager.Instance.SetAllBlocksInteractable(true);
+        Instance.ChangeState(GameManager.GameState.WaitingInput);
     }
     public void Reset()
     {
@@ -130,25 +147,25 @@ public class GameManager : MonoBehaviour
     
     private IEnumerator PlayWinSequence()
     {
-        LevelManager.SaveLevelProgress(SceneManager.GetActiveScene().buildIndex);
         yield return new WaitForSeconds(1f);
         BlockManager.Instance.BlastAllBlocks(false);
-        Debug.Log("Win sequence started!");
-        
-        yield return new WaitForSeconds(3.0f);
-
+        yield return new WaitForSeconds(5.0f);
         canvas.ActivateWinPanel();
-
         Reset();
         AudioManager.Instance.isVictoryMode=false;
     }
 
-
-
+    private IEnumerator ShowLosePanelWithDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Instance.PauseGame();
+        canvas.ActivateLostPanel();
+    }
+    
     public enum GameState
     {
         Menu,
-        Pause,
+         Pause,
         Play,
         SpawningBlocks,
         WaitingInput,

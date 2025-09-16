@@ -32,31 +32,35 @@ public class AuthUIManager : MonoBehaviour
         registerButton.onClick.AddListener(OnRegisterClicked);
     }
 
-    public void OnLoginClicked()
-    {
-        string username = loginUsernameInput.text;
-        string password = loginPasswordInput.text;
+   public void OnLoginClicked()
+{
+    string username = loginUsernameInput.text.Trim();  // boşlukları kırp
+    string password = loginPasswordInput.text.Trim();
 
-        if (!authWarningManager.ValidateLogin(username, password))
-            return;
+    Debug.Log($"[Login Attempt] Username: '{username}', Password length: {password.Length}");
 
-        // Buraya kadar geldiyse giriş kuralları sağlanmıştır, login işlemini başlatabilirsiniz
-        StartCoroutine(ApiManager.Instance.PostRequest<LoginRequest, User>(
-            "/api/auth/login",
-            new LoginRequest { Username = username, Password = password },
-            user =>
-            {
-                PlayerDataManager.Instance.SetUser(user);
-                PlayerUIManager.Instance.UpdateUI();
-                StartCoroutine(Deactive());
-                
-            },
-            error =>
-            {
-                authWarningManager.ShowLoginFailed();
-            }
-        ));
-    }
+    if (!authWarningManager.ValidateLogin(username, password))
+        return;
+
+    StartCoroutine(ApiManager.Instance.PostRequest<LoginRequest, User>(
+        "/api/auth/login",
+        new LoginRequest { Username = username, Password = password },
+        user =>
+        {
+            Debug.Log("[Login Success] UserID: " + user.UserID);
+            PlayerDataManager.Instance.SetUser(user);
+            PlayerUIManager.Instance.UpdateUI();
+            StartCoroutine(Deactive());
+        },
+        error =>
+        {
+            Debug.LogError("[Login Failed] Error: " + error);
+            Debug.LogError("[Login Failed] Sent Username: " + username + ", Password length: " + password.Length);
+            authWarningManager.ShowLoginFailed();
+        }
+    ));
+}
+
 
     IEnumerator Deactive()
     {

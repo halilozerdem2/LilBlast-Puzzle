@@ -43,11 +43,19 @@ public class LevelProgress
 {
     public int ProgressID;
     public int UserID;
-    public int LevelNumber;        // ✅ PascalCase
+    public int LevelNumber;
+
     public int Stars;
-    public int CompletionTime;     // ✅ backend CompletionTime ile eşleşiyor
+    public int CompletionTime;       // saniye cinsinden 
     public DateTime CompletedAt;
+
+    // Yeni eklenen alanlar
+    public int Attempts;             // Başarısız + başarılı deneme sayısı
+    public int Failures;             // Sadece başarısız denemeler
+    public int MovesLeft;            // Kalan hamle sayısı
+    public int PowerUpsUsed;         // Kullanılan power-up sayısı
 }
+
 
 [Serializable]
 public class LoginRequest

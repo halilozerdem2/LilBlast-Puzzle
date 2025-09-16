@@ -11,6 +11,8 @@ public class PowerUpManager : MonoBehaviour
     public Button powerShuffleButton;
     public Button modifyButton;
     public Button destroyButton;
+    public int initialPowerUpCount;
+
 
     private int shuffleCount
     {
@@ -53,11 +55,14 @@ public class PowerUpManager : MonoBehaviour
     {
         UpdateButtons();
         PlayerDataManager.OnUserDataChanged += UpdateButtons;
+        LevelManager.OnLevelSceneLoaded += TotalPowerUps;
+
     }
 
     private void OnDisable()
     {
         PlayerDataManager.OnUserDataChanged -= UpdateButtons;
+        LevelManager.OnLevelSceneLoaded -= TotalPowerUps;
     }
 
     private void Start()
@@ -129,5 +134,15 @@ public class PowerUpManager : MonoBehaviour
         if (powerShuffleButton) powerShuffleButton.interactable = powerShuffleCount > 0;
         if (modifyButton) modifyButton.interactable = modifyCount > 0;
         if (destroyButton) destroyButton.interactable = destroyCount > 0;
+    }
+    public void TotalPowerUps()
+    {
+    initialPowerUpCount = shuffleCount + powerShuffleCount + modifyCount + destroyCount;
+    Debug.Log("Total Power-Ups after scene load: " + initialPowerUpCount);
+    }
+     public int CalculateSpentPowerUpAmount()
+    {
+        var spent = initialPowerUpCount-shuffleCount - powerShuffleCount + modifyCount + destroyCount;
+         return spent;
     }
 }

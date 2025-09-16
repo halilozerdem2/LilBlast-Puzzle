@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class AudioManager : MonoBehaviour
 {
@@ -7,14 +8,18 @@ public class AudioManager : MonoBehaviour
     [Header("Music Clips")]
     [SerializeField] private AudioClip mainMenuMusic;
     [SerializeField] private AudioClip[] gameSceneMusic;
-    [SerializeField] AudioClip victoryMusic;
+    [SerializeField] private AudioClip victoryMusic;
+    [SerializeField] private AudioClip loseMusic;
+    [SerializeField] public AudioClip loseSFX;
 
     [Header("Audio Sources")]
     [SerializeField] private AudioSource musicSource;
     [SerializeField] private AudioSource sfxSource;
 
+
     private int currentTrackIndex = 0;
     public bool isVictoryMode = false;
+    public bool isLoseMode = false;
 
 
     private void Awake()
@@ -36,15 +41,17 @@ public class AudioManager : MonoBehaviour
         PlayMainMenuMusic();
     }
 
-    private void Update()
-    {
-        if (isVictoryMode) return;
+private void Update()
+{
+    // Eğer kazanma veya kaybetme modundaysak müzik değiştirme
+    if (isVictoryMode || isLoseMode) return;
 
-        if (!musicSource.isPlaying && gameSceneMusic.Length > 0)
-        {
-            PlayNextGameTrack();
-        }
+    if (!musicSource.isPlaying && gameSceneMusic.Length > 0)
+    {
+        PlayNextGameTrack();
     }
+}
+
 
 
     private void InitializeAudioSources()
@@ -130,13 +137,41 @@ public class AudioManager : MonoBehaviour
         if (!IsSFXOn()) return;
         ObjectPool.Instance?.PlaySound(type);
     }
-    
+
     public void PlayVictorySound()
     {
         StopMusic();
         isVictoryMode = true;
         sfxSource.PlayOneShot(victoryMusic);
-        Debug.Log("Victory sound played!");
     }
+    public void PlayLoseSequence()
+    {
+        StopMusic();
+        isLoseMode = true;
+        sfxSource.PlayOneShot(loseSFX);
+        Instance.StartCoroutine(PlayLoseMusicAfterSFX());
+    }
+    private IEnumerator PlayLoseMusicAfterSFX()
+    {
+        if (loseSFX == null)
+        {
+            Debug.LogError("LoseSFX is missing!");
+            yield break;
+        }
+
+        yield return new WaitForSeconds(loseSFX.length);
+
+        if (!isLoseMode) yield break; // bu sırada başka state’e geçtiyse çalma
+
+        if (loseMusic == null)
+        {
+            Debug.LogError("LoseMusic is missing!");
+            yield break;
+        }
+        musicSource.clip = loseMusic;
+        musicSource.loop = true;
+        musicSource.Play();
+        isLoseMode = false; // müzik başladıktan sonra kaybetme modunu kapat
+}
 
 }
