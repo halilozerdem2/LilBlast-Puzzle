@@ -51,6 +51,7 @@ public class GameManager : MonoBehaviour
         switch (newState)
         {
             case GameState.Menu:
+                LilManager.Instance.SetToMenuSpwnPoint();
                 Reset();
                 canvas.ActivateMainMenu();
                 Time.timeScale = 1;
@@ -58,6 +59,7 @@ public class GameManager : MonoBehaviour
                 break;
                 
             case GameState.Play:
+                LilManager.Instance.SetToPlaySpawn();
                 AudioManager.Instance.PlayGameSceneMusic();
                 handler.AssignTarget();
                 break;
@@ -88,7 +90,7 @@ public class GameManager : MonoBehaviour
                 break;
             case GameState.Shuffling:
                 shuffle.HandleShuffle();
-                OnGridReady?.Invoke();
+                OnGridReady?.Invoke();  
                 break;
 
             case GameState.Win:
@@ -102,6 +104,9 @@ public class GameManager : MonoBehaviour
                 LevelManager.Instance.FailLevel();
                 AudioManager.Instance.PlayLoseSequence();
                 StartCoroutine(ShowLosePanelWithDelay(AudioManager.Instance.loseSFX.length));
+                break;
+            case GameState.Manipulating:
+                BlockManager.Instance.SetAllBlocksInteractable(false);
                 break;
         }
     }
@@ -174,5 +179,6 @@ public class GameManager : MonoBehaviour
         Shuffling,
         Win,
         Lose,
+        Manipulating,
     }
 }

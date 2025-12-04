@@ -15,6 +15,10 @@ public class AudioManager : MonoBehaviour
     [Header("Audio Sources")]
     [SerializeField] private AudioSource musicSource;
     [SerializeField] private AudioSource sfxSource;
+    
+    [Header("Lil Audio Clips")]
+    [SerializeField] private AudioSource lilSource;       
+    [SerializeField] private AudioClip[] lilClips;     
 
 
     private int currentTrackIndex = 0;
@@ -61,11 +65,19 @@ private void Update()
 
         if (sfxSource == null)
             sfxSource = gameObject.AddComponent<AudioSource>();
+        if(lilSource == null)
+            lilSource = gameObject.AddComponent<AudioSource>();
+        
+        lilSource.loop = false;
+        lilSource.volume = 1.0f; 
+        musicSource.playOnAwake = false;
 
         musicSource.loop = false;
+        musicSource.volume = 0.7f;
         musicSource.playOnAwake = false;
 
         sfxSource.loop = false;
+        sfxSource.volume = 0.7f;
         sfxSource.playOnAwake = false;
     }
 
@@ -173,5 +185,15 @@ private void Update()
         musicSource.Play();
         isLoseMode = false; // müzik başladıktan sonra kaybetme modunu kapat
 }
+    
+    public void PlayLilVoice(int clipIndex)
+    {
+        if (lilClips == null || lilClips.Length == 0) return;
+
+        if (clipIndex < 0 || clipIndex >= lilClips.Length)
+            clipIndex = 0; // default olarak ilk ses çalınır
+
+        lilSource.PlayOneShot(lilClips[clipIndex]);
+    }
 
 }

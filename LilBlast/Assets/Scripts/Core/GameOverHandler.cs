@@ -91,7 +91,7 @@ public class GameOverHandler : MonoBehaviour
         }
     }
 
-    public void DecreaseMove()
+    public void DecreaseMove(int aAmount=1)
     {
         moves--;
         UpdateUI();
