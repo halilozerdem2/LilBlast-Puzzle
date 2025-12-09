@@ -1,0 +1,47 @@
+{
+  "buildFiles": [
+    "/Users/lil/Desktop/Projects/Repo/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/CMakeLists.txt",
+    "/Users/lil/Desktop/Projects/Repo/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/FramePacing/CMakeLists.txt",
+    "/Users/lil/Desktop/Projects/Repo/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/GameActivity/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Applications/Unity/Hub/Editor/6000.0.37f1/PlaybackEngines/AndroidPlayer/SDK/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/lil/Desktop/Projects/Repo/Puzzle Case/PuzzleCase/LilBlast/.utmp/Debug/6w5o4la6/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Applications/Unity/Hub/Editor/6000.0.37f1/PlaybackEngines/AndroidPlayer/SDK/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/lil/Desktop/Projects/Repo/Puzzle Case/PuzzleCase/LilBlast/.utmp/Debug/6w5o4la6/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "game::@d02bb112ea9f9c2ed29f": {
+      "toolchain": "toolchain",
+      "abi": "armeabi-v7a",
+      "artifactName": "game",
+      "output": "/Users/lil/Desktop/Projects/Repo/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/Debug/6w5o4la6/obj/armeabi-v7a/libgame.so",
+      "runtimeFiles": []
+    },
+    "swappywrapper::@7e25bd1f32ce224db4e9": {
+      "toolchain": "toolchain",
+      "abi": "armeabi-v7a",
+      "artifactName": "swappywrapper",
+      "output": "/Users/lil/Desktop/Projects/Repo/Puzzle Case/PuzzleCase/LilBlast/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/Debug/6w5o4la6/obj/armeabi-v7a/libswappywrapper.so",
+      "runtimeFiles": []
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "/Applications/Unity/Hub/Editor/6000.0.37f1/PlaybackEngines/AndroidPlayer/NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang.lld",
+      "cppCompilerExecutable": "/Applications/Unity/Hub/Editor/6000.0.37f1/PlaybackEngines/AndroidPlayer/NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++.lld"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}
