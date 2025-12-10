@@ -63,8 +63,9 @@ public class LevelManager : MonoBehaviour
         PlayerPrefs.SetInt(key + "_Attempts", currentLevelProgress.Attempts);
         PlayerPrefs.SetInt(key + "_Failures", currentLevelProgress.Failures);
         PlayerPrefs.Save();
+        PlayerDataController.Instance?.RecordLevelFailure();
     }
-     public void CompleteLevel(int score, int movesLeft, int powerUpsUsed)
+     public void CompleteLevel(int score, int movesLeft, int powerUpsUsed, PowerUpUsageSnapshot usageSnapshot)
     {
         if (currentLevelProgress == null) return;
 
@@ -82,7 +83,7 @@ public class LevelManager : MonoBehaviour
    
 
         SaveLevelProgressToLocal(currentLevelProgress.LevelNumber);
-        PlayerDataManager.Instance.UpdateLevelProgress(currentLevelProgress);
+        PlayerDataController.Instance?.RecordLevelCompletion(currentLevelProgress, score, usageSnapshot);
 
     }
 
@@ -152,4 +153,17 @@ public class LevelManager : MonoBehaviour
         PlayerPrefs.DeleteKey(LastCompletedLevelKey);
     }
 
+}
+
+[Serializable]
+public class LevelProgress
+{
+    public int LevelNumber;
+    public int Stars;
+    public int CompletionTime;
+    public DateTime CompletedAt;
+    public int Attempts;
+    public int Failures;
+    public int MovesLeft;
+    public int PowerUpsUsed;
 }

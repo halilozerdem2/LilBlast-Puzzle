@@ -5,6 +5,7 @@ public class PowerUpManager : MonoBehaviour
 {
     [SerializeField] ShuffleManager shuffle;
     [SerializeField] GameObject bombanimation;
+    [SerializeField] private PlayerDataController playerDataController;
 
     // Buton referansları
     public Button shuffleButton;
@@ -13,56 +14,40 @@ public class PowerUpManager : MonoBehaviour
     public Button destroyButton;
     public int initialPowerUpCount;
 
+    [Header("Available Charges")]
+    [SerializeField] private int shuffleCount = 0;
+    [SerializeField] private int powerShuffleCount = 0;
+    [SerializeField] private int modifyCount = 0;
+    [SerializeField] private int destroyCount = 0;
 
-    private int shuffleCount
+    private int usedShuffle;
+    private int usedPowerShuffle;
+    private int usedModify;
+    private int usedDestroy;
+
+    private void Awake()
     {
-        get
-        {
-            if (PlayerDataManager.Instance == null) return 0;
-            var user = PlayerDataManager.Instance.CurrentUser;
-            return user?.PowerUps?.ShuffleCount ?? 0;
-        }
-    }
-    private int powerShuffleCount
-    {
-        get
-        {
-            if (PlayerDataManager.Instance == null) return 0;
-            var user = PlayerDataManager.Instance.CurrentUser;
-            return user?.PowerUps?.PowerShuffleCount ?? 0;
-        }
-    }
-    private int modifyCount
-    {
-        get
-        {
-            if (PlayerDataManager.Instance == null) return 0;
-            var user = PlayerDataManager.Instance.CurrentUser;
-            return user?.PowerUps?.ModifyCount ?? 0;
-        }
-    }
-    private int destroyCount
-    {
-        get
-        {
-            if (PlayerDataManager.Instance == null) return 0;
-            var user = PlayerDataManager.Instance.CurrentUser;
-            return user?.PowerUps?.DestroyCount ?? 0;
-        }
+        if (playerDataController == null)
+            playerDataController = FindObjectOfType<PlayerDataController>();
     }
 
     private void OnEnable()
     {
         UpdateButtons();
-        PlayerDataManager.OnUserDataChanged += UpdateButtons;
         LevelManager.OnLevelSceneLoaded += TotalPowerUps;
+        if (playerDataController != null)
+        {
+            playerDataController.InventoryUpdated += HandleInventoryUpdated;
+            HandleInventoryUpdated(playerDataController.Inventory);
+        }
 
     }
 
     private void OnDisable()
     {
-        PlayerDataManager.OnUserDataChanged -= UpdateButtons;
         LevelManager.OnLevelSceneLoaded -= TotalPowerUps;
+        if (playerDataController != null)
+            playerDataController.InventoryUpdated -= HandleInventoryUpdated;
     }
 
     private void Start()
@@ -73,63 +58,55 @@ public class PowerUpManager : MonoBehaviour
     // --- PowerUp Kullanımları ---
     public void UseShuffle()
     {
-        if (shuffleCount > 0)
-        {
-            PlayerDataManager.Instance.UpdatePowerUp("Shuffle", -1);
-            shuffle.HandleShuffle();
-        }
-        //UpdateButtons();
+        if (shuffleCount <= 0) return;
+
+        shuffleCount--;
+        usedShuffle++;
+        shuffle.HandleShuffle();
+        RegisterImmediateUsage(1, 0, 0, 0);
+        UpdateButtons();
     }
 
     public void UsePowerShuffle()
     {
-        if (powerShuffleCount > 0)
-        {
-            PlayerDataManager.Instance.UpdatePowerUp("PowerShuffle", -1);
-            shuffle.HandleShuffle(true);
-        }
+        if (powerShuffleCount <= 0) return;
+
+        powerShuffleCount--;
+        usedPowerShuffle++;
+        shuffle.HandleShuffle(true);
+        RegisterImmediateUsage(0, 1, 0, 0);
         UpdateButtons();
     }
 
     public void UseModify()
     {
-        if (modifyCount > 0)
-        {
-            PlayerDataManager.Instance.UpdatePowerUp("Modify", -1);
-            Debug.Log("Modify kullanıldı. Kalan: " + (modifyCount - 1));
-            // Buraya senin modify algoritmanı çağır
-        }
+        if (modifyCount <= 0) return;
+
+        modifyCount--;
+        usedModify++;
+        Debug.Log("Modify kullanıldı. Kalan: " + modifyCount);
+        // Buraya senin modify algoritmanı çağır
+        RegisterImmediateUsage(0, 0, 1, 0);
         UpdateButtons();
     }
 
     public void UseDestroy()
     {
-        if (destroyCount > 0)
-        {
-            PlayerDataManager.Instance.UpdatePowerUp("Destroy", -1);
-            Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, Camera.main.nearClipPlane + 5f);
-            Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenCenter);
-            Instantiate(bombanimation, worldPos, Quaternion.identity, this.transform);
-            BlockManager.Instance.BlastAllBlocks();
-        }
+        if (destroyCount <= 0) return;
+
+        destroyCount--;
+        usedDestroy++;
+        Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, Camera.main.nearClipPlane + 5f);
+        Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenCenter);
+        Instantiate(bombanimation, worldPos, Quaternion.identity, this.transform);
+        BlockManager.Instance.BlastAllBlocks();
+        RegisterImmediateUsage(0, 0, 0, 1);
         UpdateButtons();
     }
 
     // --- Buton Güncelleme ---
     private void UpdateButtons()
     {
-        // Eğer PlayerDataManager veya kullanıcı veya powerup verisi yoksa tüm butonları kapat
-        if (PlayerDataManager.Instance == null ||
-            PlayerDataManager.Instance.CurrentUser == null ||
-            PlayerDataManager.Instance.CurrentUser.PowerUps == null)
-        {
-            if (shuffleButton) shuffleButton.interactable = false;
-            if (powerShuffleButton) powerShuffleButton.interactable = false;
-            if (modifyButton) modifyButton.interactable = false;
-            if (destroyButton) destroyButton.interactable = false;
-            return;
-        }
-
         if (shuffleButton) shuffleButton.interactable = shuffleCount > 0;
         if (powerShuffleButton) powerShuffleButton.interactable = powerShuffleCount > 0;
         if (modifyButton) modifyButton.interactable = modifyCount > 0;
@@ -137,12 +114,61 @@ public class PowerUpManager : MonoBehaviour
     }
     public void TotalPowerUps()
     {
-    initialPowerUpCount = shuffleCount + powerShuffleCount + modifyCount + destroyCount;
-    Debug.Log("Total Power-Ups after scene load: " + initialPowerUpCount);
+        ResetUsageCounters();
+        initialPowerUpCount = shuffleCount + powerShuffleCount + modifyCount + destroyCount;
+        Debug.Log("Total Power-Ups after scene load: " + initialPowerUpCount);
     }
      public int CalculateSpentPowerUpAmount()
     {
-        var spent = initialPowerUpCount-shuffleCount - powerShuffleCount + modifyCount + destroyCount;
-         return spent;
+        int remaining = shuffleCount + powerShuffleCount + modifyCount + destroyCount;
+        return Mathf.Max(0, initialPowerUpCount - remaining);
+    }
+
+    public PowerUpUsageSnapshot ConsumeUsageSnapshot()
+    {
+        var snapshot = new PowerUpUsageSnapshot
+        {
+            Shuffle = usedShuffle,
+            PowerShuffle = usedPowerShuffle,
+            Manipulate = usedModify,
+            Destroy = usedDestroy
+        };
+
+        ResetUsageCounters();
+
+        return snapshot;
+    }
+
+    private void HandleInventoryUpdated(PlayerInventoryState inventory)
+    {
+        if (inventory == null)
+            return;
+
+        shuffleCount = Mathf.Max(0, inventory.Shuffle);
+        powerShuffleCount = Mathf.Max(0, inventory.PowerShuffle);
+        modifyCount = Mathf.Max(0, inventory.Manipulate);
+        destroyCount = Mathf.Max(0, inventory.Destroy);
+        UpdateButtons();
+    }
+
+    private void ResetUsageCounters()
+    {
+        usedShuffle = 0;
+        usedPowerShuffle = 0;
+        usedModify = 0;
+        usedDestroy = 0;
+    }
+
+    private void RegisterImmediateUsage(int shuffleDelta, int powerShuffleDelta, int manipulateDelta, int destroyDelta)
+    {
+        var snapshot = new PowerUpUsageSnapshot
+        {
+            Shuffle = shuffleDelta,
+            PowerShuffle = powerShuffleDelta,
+            Manipulate = manipulateDelta,
+            Destroy = destroyDelta
+        };
+
+        PlayerDataController.Instance?.ApplyPowerupUsage(snapshot);
     }
 }

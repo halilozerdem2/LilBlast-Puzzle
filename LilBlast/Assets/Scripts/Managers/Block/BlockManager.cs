@@ -391,9 +391,6 @@ public class BlockManager : MonoBehaviour
         return;
     }
 
-    // PowerUp harca
-    PlayerDataManager.Instance.UpdatePowerUp("Modify", -1);
-
     foreach (var b in group)
     {
         Node node = b.node;
@@ -424,4 +421,3 @@ public class BlockManager : MonoBehaviour
 }
 
 }
-

@@ -94,7 +94,8 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Win:
-                LevelManager.Instance.CompleteLevel(score.currentScore, handler.moves, powerUpManager.CalculateSpentPowerUpAmount());
+                var usageSnapshot = powerUpManager != null ? powerUpManager.ConsumeUsageSnapshot() : new PowerUpUsageSnapshot();
+                LevelManager.Instance.CompleteLevel(score.currentScore, handler.moves, powerUpManager.CalculateSpentPowerUpAmount(), usageSnapshot);
                 AudioManager.Instance.PlayVictorySound();
                 StartCoroutine(PlayWinSequence());
                 break;
