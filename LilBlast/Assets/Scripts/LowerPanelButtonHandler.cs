@@ -92,8 +92,19 @@ public class LowerPanelButtonHandler : MonoBehaviour
 
     public void SetActiveButton(string buttonName)
     {
-        activeButton.name = buttonName;
+        if (string.IsNullOrEmpty(buttonName))
+            return;
+
+        foreach (var menuButton in menuButtons)
+        {
+            if (menuButton != null && menuButton.name == buttonName)
+            {
+                OnButtonClicked(menuButton);
+                return;
+            }
+        }
+
+        Debug.LogWarning($"LowerPanelButtonHandler: Button with name '{buttonName}' not found.");
     }
    
 }
-

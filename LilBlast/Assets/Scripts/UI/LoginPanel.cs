@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using LilBlast.Backend;
 using TMPro;
 using UnityEngine;
@@ -12,6 +13,7 @@ public class LoginPanel : MonoBehaviour
 {
     [Header("Dependencies")]
     [SerializeField] private LoginManager loginManager;
+    [SerializeField] private AuthInputFieldController authInputController;
 
     [Header("Login Fields")]
     [SerializeField] private TMP_InputField loginUsernameInput;
@@ -33,13 +35,28 @@ public class LoginPanel : MonoBehaviour
     [SerializeField] private UnityEvent onGoogleSignInRequested;
     [SerializeField] private UnityEvent onFacebookSignInRequested;
 
+    [Header("Animation")]
+    [SerializeField] private bool animateOnEnable = true;
+    [SerializeField] private float slideDistance = 400f;
+    [SerializeField] private float slideDuration = 0.35f;
+    [SerializeField] private Ease slideEase = Ease.OutBack;
+
     private bool isWaitingForExternalOAuth;
     private AuthProvider pendingOAuthProvider = AuthProvider.GUEST;
+    private RectTransform rectTransform;
+    private Vector2 originalAnchoredPosition;
+    private Tween slideTween;
 
     private void Awake()
     {
+        rectTransform = GetComponent<RectTransform>();
+        if (rectTransform != null)
+            originalAnchoredPosition = rectTransform.anchoredPosition;
+
         if (loginManager == null)
             loginManager = FindObjectOfType<LoginManager>();
+        if (authInputController == null)
+            authInputController = GetComponent<AuthInputFieldController>();
     }
 
     private void OnEnable()
@@ -49,6 +66,10 @@ public class LoginPanel : MonoBehaviour
 
         loginManager.AuthError += HandleAuthError;
         loginManager.SessionChanged += HandleSessionChanged;
+        HandleSessionChanged(loginManager.CurrentSession);
+
+        if (animateOnEnable)
+            PlaySlideIn();
     }
 
     private void OnDisable()
@@ -58,6 +79,8 @@ public class LoginPanel : MonoBehaviour
 
         loginManager.AuthError -= HandleAuthError;
         loginManager.SessionChanged -= HandleSessionChanged;
+        StopSlideTween();
+        ResetPosition();
     }
 
     public void SubmitLogin()
@@ -85,6 +108,8 @@ public class LoginPanel : MonoBehaviour
 
         SetBusy(true);
         loginManager.LoginWithEmail(username, password);
+        authInputController?.ClearLoginFields();
+        ClearFeedback();
     }
 
     public void SubmitSignIn()
@@ -113,6 +138,8 @@ public class LoginPanel : MonoBehaviour
 
         SetBusy(true);
         loginManager.RegisterWithEmail(email, username, password);
+        authInputController?.ClearSignInFields();
+        ClearFeedback();
     }
 
     public void BeginGoogleLogin()
@@ -212,9 +239,12 @@ public class LoginPanel : MonoBehaviour
         isWaitingForExternalOAuth = false;
         SetBusy(false);
 
-        if (session != null)
+        var hasAuthenticatedUser = session != null && !session.IsGuest;
+
+        if (hasAuthenticatedUser)
         {
             ShowFeedback("Authentication successful!", false);
+            authInputController?.ClearAllFields();
         }
     }
 
@@ -246,5 +276,48 @@ public class LoginPanel : MonoBehaviour
 
         feedbackLabel.text = string.IsNullOrEmpty(message) ? string.Empty : message;
         feedbackLabel.color = isError ? errorColor : successColor;
+    }
+
+    private void ClearFeedback()
+    {
+        if (feedbackLabel == null)
+            return;
+
+        feedbackLabel.text = string.Empty;
+    }
+
+    private void PlaySlideIn()
+    {
+        if (rectTransform == null)
+            return;
+
+        StopSlideTween();
+        rectTransform.anchoredPosition = originalAnchoredPosition + Vector2.down * Mathf.Abs(slideDistance);
+        slideTween = rectTransform.DOAnchorPos(originalAnchoredPosition, slideDuration)
+            .SetEase(slideEase)
+            .SetUpdate(true)
+            .OnKill(() => slideTween = null);
+    }
+
+    public void HidePanelWithAnimation()
+    {
+        gameObject.SetActive(false);
+    }
+
+    private void StopSlideTween()
+    {
+        if (slideTween != null)
+        {
+            slideTween.Kill();
+            slideTween = null;
+        }
+    }
+
+    private void ResetPosition()
+    {
+        if (rectTransform == null)
+            return;
+
+        rectTransform.anchoredPosition = originalAnchoredPosition;
     }
 }

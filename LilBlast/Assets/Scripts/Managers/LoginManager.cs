@@ -29,6 +29,10 @@ public class LoginManager : MonoBehaviour
     [SerializeField] private UnityEvent onLogout;
     [SerializeField] private UnityEvent<string> onAuthError;
 
+    [Header("UI Controls")]
+    [SerializeField] private GameObject loginButtonLabel;
+    [SerializeField] private LoginPanel loginPanel;
+
     public event Action<AuthSession> SessionChanged;
     public event Action<PlayerInventoryState> InventoryChanged;
     public event Action<PlayerStatsState> StatsChanged;
@@ -43,6 +47,7 @@ public class LoginManager : MonoBehaviour
     private AuthSession currentSession;
     private bool isBusy;
     private Coroutine playerDataRoutine;
+    private Coroutine loginPanelHideRoutine;
 
     private void Awake()
     {
@@ -57,6 +62,7 @@ public class LoginManager : MonoBehaviour
 
         authClient = new AuthApiClient(baseApiUrl);
         LoadSessionFromPrefs();
+        UpdateLoginUiState(HasAuthenticatedUser);
         EnsurePlayerDataController();
     }
 
@@ -74,6 +80,7 @@ public class LoginManager : MonoBehaviour
             onLoginSuccess?.Invoke();
             SessionChanged?.Invoke(currentSession);
             BeginPlayerDataRefresh();
+            UpdateLoginUiState(HasAuthenticatedUser);
         }
     }
 
@@ -190,6 +197,7 @@ public class LoginManager : MonoBehaviour
         SessionChanged?.Invoke(null);
         InventoryChanged?.Invoke(null);
         StatsChanged?.Invoke(null);
+        UpdateLoginUiState(false);
 
         if (playerDataRoutine != null)
         {
@@ -275,6 +283,7 @@ public class LoginManager : MonoBehaviour
         InventoryChanged?.Invoke(currentSession.Inventory);
         StatsChanged?.Invoke(currentSession.Stats);
         BeginPlayerDataRefresh();
+        UpdateLoginUiState(!currentSession.IsGuest);
     }
 
     private void HandleLoginError(BackendError error)
@@ -426,9 +435,6 @@ public class LoginManager : MonoBehaviour
         if (currentSession == null || string.IsNullOrEmpty(currentSession.UserId) || string.IsNullOrEmpty(currentSession.AuthToken))
             return;
 
-        if (currentSession.IsGuest)
-            return;
-
         if (authClient == null)
             return;
 
@@ -546,6 +552,31 @@ public class LoginManager : MonoBehaviour
 
         var go = new GameObject("PlayerDataController");
         go.AddComponent<PlayerDataController>();
+    }
+
+    private void UpdateLoginUiState(bool hasAuthenticatedUser)
+    {
+        if (loginButtonLabel != null)
+            loginButtonLabel.SetActive(!hasAuthenticatedUser);
+
+        if (loginPanelHideRoutine != null)
+        {
+            StopCoroutine(loginPanelHideRoutine);
+            loginPanelHideRoutine = null;
+        }
+
+        if (hasAuthenticatedUser && loginPanel != null)
+        {
+            loginPanelHideRoutine = StartCoroutine(HideLoginPanelAfterDelay(1f));
+        }
+    }
+
+    private IEnumerator HideLoginPanelAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (loginPanel != null)
+            loginPanel.HidePanelWithAnimation();
+        loginPanelHideRoutine = null;
     }
 }
 

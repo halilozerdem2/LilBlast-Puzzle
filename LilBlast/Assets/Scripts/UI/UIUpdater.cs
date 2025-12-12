@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Simple helper that reflects the currently logged in username and mirrors inventory/stat snapshots on the UI.
@@ -26,6 +27,9 @@ public class UIUpdater : MonoBehaviour
     [SerializeField] private TMP_Text threeStarLabel;
     [SerializeField] private TMP_Text totalPowerupsLabel;
 
+    [Header("Profile")]
+    [SerializeField] private AvatarSelectionPanel avatarSelectionPanel;
+    [SerializeField] private Image avatarImage;
     private LoginManager loginManager;
 
     private void Awake()
@@ -34,6 +38,8 @@ public class UIUpdater : MonoBehaviour
             loginManager = FindObjectOfType<LoginManager>();
         if (playerDataController == null)
             playerDataController = FindObjectOfType<PlayerDataController>();
+        if (avatarSelectionPanel == null)
+            avatarSelectionPanel = FindObjectOfType<AvatarSelectionPanel>();
     }
 
     private void OnEnable()
@@ -43,6 +49,7 @@ public class UIUpdater : MonoBehaviour
 
         loginManager.SessionChanged += HandleSessionChanged;
         UpdateLabel(loginManager.CurrentSession);
+        UpdateAvatar(loginManager.CurrentSession);
 
         if (playerDataController != null)
         {
@@ -70,6 +77,7 @@ public class UIUpdater : MonoBehaviour
     private void HandleSessionChanged(AuthSession session)
     {
         UpdateLabel(session);
+        UpdateAvatar(session);
     }
 
     private void HandleInventoryChanged(PlayerInventoryState inventory)
@@ -111,6 +119,22 @@ public class UIUpdater : MonoBehaviour
             : (!string.IsNullOrEmpty(session.UserId) ? session.UserId : loggedOutText);
 
         usernameLabel.text = displayName;
+    }
+
+    private void UpdateAvatar(AuthSession session)
+    {
+        if (avatarImage == null)
+            return;
+
+        if (avatarSelectionPanel == null)
+        {
+            avatarImage.enabled = false;
+            return;
+        }
+
+        var sprite = avatarSelectionPanel.GetSpriteForSession(session);
+        avatarImage.sprite = sprite;
+        avatarImage.enabled = sprite != null;
     }
 
     private void SetNumber(TMP_Text label, long? value)
