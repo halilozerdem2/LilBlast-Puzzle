@@ -25,7 +25,8 @@ public class AvatarSelectionPanel : MonoBehaviour
     [SerializeField] private string avatarResourceFolder = "UI/AVATAR";
     [SerializeField] private GameObject loginRequiredNotice;
     [SerializeField] private GameObject avatarPanelRoot;
-    [SerializeField] private GameObject loginPanelRoot;
+    [SerializeField] private LoginMethodPanel loginMethodPanel;
+    [SerializeField] private GameObject loginMethodPanelRoot;
     [SerializeField] private MenuPanelController menuPanelController;
     [SerializeField] private LowerPanelButtonHandler lowerPanelButtonHandler;
     [SerializeField] private string statsButtonName = "Stats Button";
@@ -55,16 +56,21 @@ public class AvatarSelectionPanel : MonoBehaviour
     private void Awake()
     {
         EnsureInitialized();
+        SubscribeToSessionChanges();
+        HandleSessionChanged(loginManager != null ? loginManager.CurrentSession : null);
+
     }
 
     private void OnEnable()
     {
         EnsureInitialized();
+        SubscribeToSessionChanges();
+        HandleSessionChanged(loginManager != null ? loginManager.CurrentSession : null);
     }
 
     private void OnDisable()
     {
-        UnsubscribeFromSessionChanges();
+        //UnsubscribeFromSessionChanges();
         ResetPanelAnimation();
     }
 
@@ -75,6 +81,10 @@ public class AvatarSelectionPanel : MonoBehaviour
 
         if (loginManager == null)
             loginManager = LoginManager.Instance ?? FindObjectOfType<LoginManager>();
+        if (loginMethodPanel == null)
+            loginMethodPanel = FindObjectOfType<LoginMethodPanel>();
+        if (loginMethodPanelRoot == null && loginMethodPanel != null)
+            loginMethodPanelRoot = loginMethodPanel.gameObject;
 
         LoadAvatarsFromResources();
         BuildAvatarButtons();
@@ -86,8 +96,6 @@ public class AvatarSelectionPanel : MonoBehaviour
                 panelOriginalPos = avatarPanelRect.anchoredPosition;
         }
         UpdateLoginButtonAvatar(defaultAvatarSprite);
-        SubscribeToSessionChanges();
-        HandleSessionChanged(loginManager != null ? loginManager.CurrentSession : null);
         isInitialized = true;
     }
 
@@ -170,8 +178,7 @@ public class AvatarSelectionPanel : MonoBehaviour
         if (loginManager == null || !loginManager.HasAuthenticatedUser)
         {
             SetAvatarPanelVisible(false);
-            if (loginPanelRoot != null)
-                loginPanelRoot.SetActive(true);
+            ShowLoginChooser();
             return;
         }
 
@@ -183,8 +190,7 @@ public class AvatarSelectionPanel : MonoBehaviour
         EnsureInitialized();
         SetAvatarPanelVisible(false);
         loginManager?.Logout();
-        if (loginPanelRoot != null)
-            loginPanelRoot.SetActive(true);
+        ShowLoginChooser();
         if (menuPanelController != null)
         {
             var index = Mathf.Max(0, logoutPanelIndex);
@@ -229,6 +235,19 @@ public class AvatarSelectionPanel : MonoBehaviour
             PlayPanelAnimation();
         else if (!visible)
             ResetPanelAnimation();
+    }
+
+    private void ShowLoginChooser()
+    {
+        EnsureInitialized();
+
+        if (loginMethodPanelRoot == null && loginMethodPanel != null)
+            loginMethodPanelRoot = loginMethodPanel.gameObject;
+
+        if (loginMethodPanelRoot != null)
+            loginMethodPanelRoot.SetActive(true);
+
+        loginMethodPanel?.ShowChooser();
     }
 
     private void HandleSessionChanged(AuthSession session)
