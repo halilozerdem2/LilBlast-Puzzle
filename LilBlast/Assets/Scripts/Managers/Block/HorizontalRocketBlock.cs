@@ -14,10 +14,17 @@ public class HorizontalRocketBlock : Block
 
         foreach (var gridNode in GridManager.Instance._nodes.Values)
         {
-            if (gridNode.gridPosition.y == row && gridNode.OccupiedBlock != null)
-            {
-                group.Add(gridNode.OccupiedBlock);
-            }
+            if (gridNode == null)
+                continue;
+
+            if (gridNode.gridPosition.y != row)
+                continue;
+
+            var block = gridNode.OccupiedBlock;
+            if (block == null || block.node != gridNode || !block.gameObject.activeInHierarchy)
+                continue;
+
+            group.Add(block);
         }
 
         return group;

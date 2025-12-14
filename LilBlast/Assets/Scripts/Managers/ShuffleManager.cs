@@ -7,9 +7,12 @@ using Random = UnityEngine.Random;
 
 public class ShuffleManager : MonoBehaviour
 {
-    public  List<Node> availableNodes;
+    public List<Node> availableNodes;
     public List<Block> blocks;
-   // public GridList gridList;
+
+    private readonly Dictionary<int, List<Node>> _columnBuckets = new Dictionary<int, List<Node>>();
+    private readonly Dictionary<int, List<Node>> _rowBuckets = new Dictionary<int, List<Node>>();
+    private readonly Dictionary<Node, int> _nodeIndices = new Dictionary<Node, int>();
 
     public void HandleShuffle(bool isOrdered=false)
     {
@@ -21,34 +24,47 @@ public class ShuffleManager : MonoBehaviour
             node.OccupiedBlock = null;
         }
 
-        availableNodes = new List<Node>(GridManager.freeNodes); // Shuffle için boş düğümleri listeye al
-        blocks = new List<Block>(BlockManager.Instance.blocks);
+        if (availableNodes == null)
+            availableNodes = new List<Node>();
+        else
+            availableNodes.Clear();
+
+        availableNodes.AddRange(GridManager.freeNodes); // Shuffle için boş düğümleri listeye al
+
+        if (blocks == null)
+            blocks = new List<Block>();
+        else
+            blocks.Clear();
+
+        blocks.AddRange(BlockManager.Instance.blocks);
 
         if (availableNodes.Count < blocks.Count)
         {
             Debug.LogError("Shuffle için yeterli boş node bulunamadı!");
             return;
         }
-            //Debug.Log(availableNodes.Count);
+        //Debug.Log(availableNodes.Count);
+
+        ShuffleAvailableNodes();
+        RefreshNodeIndices();
+        BuildBuckets();
         
         foreach (var block in blocks)
         {
             block.Shake(0.2f, 0.1f);
-            Node targetNode = AssignNewPosition(block.blockType, availableNodes,isOrdered);
+            Node targetNode = AssignNewPosition(block.blockType, isOrdered);
 
             if (targetNode == null)
             {
                 Debug.LogWarning("Geçerli bir shuffle pozisyonu bulunamadı, fallback olarak rastgele atama yapılacak.");
-                targetNode = availableNodes[Random.Range(0, availableNodes.Count)];
+                targetNode = PickRandomAvailableNode();
             }
 
             Debug.Log("karışıyor");
             block.SetBlock(targetNode);
-            
-            GridManager.freeNodes.Remove(targetNode);// Seçilen node artık dolu olduğu için listeden çıkar
+
+            ConsumeNode(targetNode);
             block.transform.DOMove(targetNode.Pos, 1.2f).SetEase(Ease.InOutQuad);
-            availableNodes.Remove(targetNode);
-            
         }
 
         GridManager.Instance.UpdateOccupiedBlock();
@@ -62,48 +78,142 @@ public class ShuffleManager : MonoBehaviour
         Instance.ChangeState(GameState.WaitingInput);
     }
 
-    private Node AssignNewPosition(int type, List<Node> availableNodes, bool isOrdered = false)
+    private void ShuffleAvailableNodes()
     {
-        Node newNode = null;
+        for (int i = availableNodes.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (availableNodes[i], availableNodes[j]) = (availableNodes[j], availableNodes[i]);
+        }
+    }
+
+    private void RefreshNodeIndices()
+    {
+        _nodeIndices.Clear();
+        for (int i = 0; i < availableNodes.Count; i++)
+        {
+            _nodeIndices[availableNodes[i]] = i;
+        }
+    }
+
+    private void BuildBuckets()
+    {
+        foreach (var list in _columnBuckets.Values)
+        {
+            list.Clear();
+        }
+
+        foreach (var list in _rowBuckets.Values)
+        {
+            list.Clear();
+        }
+
+        foreach (var node in availableNodes)
+        {
+            if (!_columnBuckets.TryGetValue(node.gridPosition.x, out List<Node> columnList))
+            {
+                columnList = new List<Node>();
+                _columnBuckets[node.gridPosition.x] = columnList;
+            }
+            columnList.Add(node);
+
+            if (!_rowBuckets.TryGetValue(node.gridPosition.y, out List<Node> rowList))
+            {
+                rowList = new List<Node>();
+                _rowBuckets[node.gridPosition.y] = rowList;
+            }
+            rowList.Add(node);
+        }
+    }
+
+    private Node AssignNewPosition(int type, bool isOrdered = false)
+    {
         float percentage = Random.Range(0f, 1f);
 
         if (isOrdered)
             percentage = Random.Range(0f, 0.1f);
 
+        if (availableNodes.Count == 0)
+            return null;
+
         if (percentage > 0.1f) // %90 tamamen rastgele
         {
-            // Fisher-Yates Shuffle uygulanarak rastgele seçme
-            int n = availableNodes.Count;
-            for (int i = n - 1; i > 0; i--)
-            {
-                int j = Random.Range(0, i + 1);
-                (availableNodes[i], availableNodes[j]) = (availableNodes[j], availableNodes[i]);
-            }
-
-            newNode = availableNodes[0]; // Fisher-Yates ile karıştırılan ilk düğümü seç
+            return PickRandomAvailableNode();
         }
-        else if(percentage>=0.05f && percentage<=0.1f) // sütuna atama
-        {
-            int selectedColumn = BlockType.Instance.SelectColumn(type);
-            List<Node> columnNodes = availableNodes.FindAll(n => n.gridPosition.x == selectedColumn);
 
-            if (columnNodes.Count > 0)
-            {
-                newNode = columnNodes[Random.Range(0, columnNodes.Count)];
-            }
+        Node newNode;
+        if (percentage >= 0.05f && percentage <= 0.1f) // sütuna atama
+        {
+            newNode = GetNodeFromColumn(type);
         }
         else // Satıra atama
         {
-            int selectedRow = BlockType.Instance.SelectRow(type);
-            List<Node> rowNodes = availableNodes.FindAll(n => n.gridPosition.y == selectedRow);
-
-            if (rowNodes.Count > 0)
-            {
-                newNode = rowNodes[Random.Range(0, rowNodes.Count)];
-            }
+            newNode = GetNodeFromRow(type);
         }
 
-        return newNode;
+        return newNode ?? PickRandomAvailableNode();
+    }
+
+    private Node GetNodeFromColumn(int type)
+    {
+        int selectedColumn = BlockType.Instance.SelectColumn(type);
+        if (_columnBuckets.TryGetValue(selectedColumn, out List<Node> columnNodes) && columnNodes.Count > 0)
+        {
+            return columnNodes[Random.Range(0, columnNodes.Count)];
+        }
+
+        return null;
+    }
+
+    private Node GetNodeFromRow(int type)
+    {
+        int selectedRow = BlockType.Instance.SelectRow(type);
+        if (_rowBuckets.TryGetValue(selectedRow, out List<Node> rowNodes) && rowNodes.Count > 0)
+        {
+            return rowNodes[Random.Range(0, rowNodes.Count)];
+        }
+
+        return null;
+    }
+
+    private Node PickRandomAvailableNode()
+    {
+        if (availableNodes == null || availableNodes.Count == 0)
+            return null;
+
+        return availableNodes[availableNodes.Count - 1];
+    }
+
+    private void ConsumeNode(Node node)
+    {
+        if (node == null)
+            return;
+
+        GridManager.freeNodes.Remove(node); // Seçilen node artık dolu olduğu için listeden çıkar
+
+        if (_nodeIndices.TryGetValue(node, out int index))
+        {
+            int lastIndex = availableNodes.Count - 1;
+            Node lastNode = availableNodes[lastIndex];
+            availableNodes[index] = lastNode;
+            availableNodes.RemoveAt(lastIndex);
+            _nodeIndices[lastNode] = index;
+            _nodeIndices.Remove(node);
+        }
+        else
+        {
+            availableNodes.Remove(node);
+        }
+
+        if (_columnBuckets.TryGetValue(node.gridPosition.x, out List<Node> columnNodes))
+        {
+            columnNodes.Remove(node);
+        }
+
+        if (_rowBuckets.TryGetValue(node.gridPosition.y, out List<Node> rowNodes))
+        {
+            rowNodes.Remove(node);
+        }
     }
 
 }

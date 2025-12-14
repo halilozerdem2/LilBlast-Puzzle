@@ -173,7 +173,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      android_dark_rd_SU@3x_0: 466844398131865665
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

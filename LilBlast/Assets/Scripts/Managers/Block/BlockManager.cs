@@ -20,7 +20,10 @@ public class BlockManager : MonoBehaviour
     public List<Block> blocks;
     public List<Block> blastedBlocks;
     public List<RegularBlock> regularBlocks;
-    public Queue<Block> specialBlocks;
+    private bool suppressRefills;
+    private readonly Dictionary<GameObject, int> prefabPoolIndices = new Dictionary<GameObject, int>();
+    private int[] blockTypePoolIndices;
+    private int nextPoolIndex;
 
     [SerializeField] private GameOverHandler handler;
     [SerializeField] private ScoreManager score;
@@ -30,29 +33,85 @@ public class BlockManager : MonoBehaviour
     public bool isModifyActive = false;
     public int modifyTargetType = -1; // Hedef tip (örn. handler.targetBlockType)
 
+    public bool SuppressRefills => suppressRefills;
+
     private void Awake()
     {
         Instance = this;
         blocks = new List<Block>();
-        specialBlocks = new Queue<Block>();
         blastedBlocks = new List<Block>();
         regularBlocks = new List<RegularBlock>();
+        blockTypePoolIndices = new int[blockTypes.Length];
+        RegisterBlockPrefabs();
+        suppressRefills = false;
     }
 
     public void InitializeBlockManager()
     {
+        StopAllCoroutines();
         blocks.Clear();
-        specialBlocks.Clear();
         blastedBlocks.Clear();
         regularBlocks.Clear();
+        prefabPoolIndices.Clear();
+        RegisterBlockPrefabs();
+        suppressRefills = false;
         Debug.Log("BlockManager yeniden başlatıldı.");
+    }
+
+    private void RegisterBlockPrefabs()
+    {
+        nextPoolIndex = 0;
+        for (int i = 0; i < blockTypes.Length; i++)
+        {
+            var blockPrefab = blockTypes[i];
+            blockTypePoolIndices[i] = EnsurePoolIndex(blockPrefab != null ? blockPrefab.gameObject : null);
+        }
+        RegisterSpecialPrefab(bomb);
+        RegisterSpecialPrefab(vRocket);
+        RegisterSpecialPrefab(hRocket);
+        RegisterSpecialPrefab(colorBomb);
+    }
+
+    private void RegisterSpecialPrefab(GameObject prefab)
+    {
+        EnsurePoolIndex(prefab);
+    }
+
+    private int EnsurePoolIndex(GameObject prefab)
+    {
+        if (prefab == null)
+            return -1;
+
+        if (prefabPoolIndices.TryGetValue(prefab, out var existing))
+            return existing;
+
+        var poolIndex = nextPoolIndex++;
+        prefabPoolIndices[prefab] = poolIndex;
+        return poolIndex;
     }
 
 
     public void SpawnBlocks()
     {
         //if (GameManager.Instance._state != GameState.SpawningBlocks) return;
-        List<Node> nodesToFill = GridManager.freeNodes.ToList();
+        if (suppressRefills)
+            return;
+        GridManager.Instance.UpdateOccupiedBlock();
+        var dedupedNodes = new List<Node>();
+        var seenNodes = new HashSet<Node>();
+        foreach (var node in GridManager.freeNodes)
+        {
+            if (node == null || node.OccupiedBlock != null)
+                continue;
+
+            if (seenNodes.Add(node))
+                dedupedNodes.Add(node);
+        }
+
+        GridManager.freeNodes.Clear();
+        GridManager.freeNodes.AddRange(dedupedNodes);
+
+        List<Node> nodesToFill = dedupedNodes;
         int counter = 0, spawnIndex;
         int targetBlockType = handler.targetBlockType;
 
@@ -70,13 +129,17 @@ public class BlockManager : MonoBehaviour
             GridManager.freeNodes.Remove(node);
 
             Vector3 spawnPos = new Vector3(node.Pos.x, GridManager.Instance._height + 1, 0);
-            Block randomBlock = Instantiate(blockTypes[spawnIndex], spawnPos, Quaternion.identity, node.transform);
-            //Block randomBlock =  ObjectPool.Instance.GetBlockFromPool(spawnIndex, spawnPos, Quaternion.identity);
+            var blockPrefab = blockTypes[spawnIndex];
+            var poolIndex = blockTypePoolIndices[spawnIndex];
+            Block randomBlock = SpawnBlockFromPool(poolIndex, blockPrefab != null ? blockPrefab.gameObject : null, spawnPos, node.transform);
+            if (randomBlock == null)
+                continue;
             counter++; // deadlock için
             randomBlock.SetBlock(node);
 
             blocks.Add(randomBlock);
-            regularBlocks.Add(randomBlock as RegularBlock);
+            if (randomBlock is RegularBlock regularBlock)
+                regularBlocks.Add(regularBlock);
 
             randomBlock.transform.DOMove(node.Pos, 0.5f).SetEase(Ease.OutBounce);
             // Debug.Log("hücreler doluyor| boş hücre sayısı" + GridManager.freeNodes.Count);
@@ -95,18 +158,6 @@ public class BlockManager : MonoBehaviour
             GameManager.Instance.ChangeState(GameState.Shuffling);
     }
 
-    public void FindAllNeighbours()
-    {
-        foreach (var block in regularBlocks)
-        {
-            if (block != null)
-            {
-                block.FindNeighbours();
-            }
-        }
-    }
-
-
     public bool HasValidMoves() // Deadlock Tespiti
     {
         foreach (var node in GridManager.Instance._nodes.Values)
@@ -122,6 +173,8 @@ public class BlockManager : MonoBehaviour
                 {
                     if (neighborNode.OccupiedBlock != null && neighborNode.OccupiedBlock.blockType == currentBlock.blockType)
                     {
+                        if (isModifyActive && neighborNode.OccupiedBlock.blockType == handler.targetBlockType)
+                            continue;
                         return true; // En az bir geçerli hamle var, shuffle yapmaya gerek yok
                     }
                 }
@@ -138,42 +191,73 @@ public class BlockManager : MonoBehaviour
         {
             if (group.Count >= minBlastableBlockGroupSize)
             {
+                var specialBlockNode = block.node;
+                var specialBlockType = block.blockType;
+                var targetAnimations = new List<(Sprite sprite, Color color, Vector3 position)>();
+                foreach (var member in group)
+                {
+                    if (member != null && member.blockType == handler.targetBlockType)
+                    {
+                        var renderer = member.GetComponent<SpriteRenderer>();
+                        if (renderer != null)
+                            targetAnimations.Add((renderer.sprite, renderer.color, member.transform.position));
+                    }
+                }
                 handler.DecreaseMove();
                 handler.UpdateTarget(block, group.Count);
                 GameManager.Instance.ChangeState(GameState.Blasting);
+                if (block.gameObject.activeInHierarchy)
+                    block.ForceShake(0.3f, 0.1f);
                 BlastRegularBlocks(group);
+
+                foreach (var info in targetAnimations)
+                    handler.PlayTargetCollectAnimation(info.sprite, info.color, info.position, 4f);
 
                 switch (group.Count)
                 {
                     case 1: break;
                     case 2: break;
-                    case 3: CreateSpecialBlock(vRocket, block.node); break;
-                    case 4: CreateSpecialBlock(hRocket, block.node); break;
-                    case 5: CreateSpecialBlock(bomb, block.node); break;
-                    default: CreateSpecialBlock(colorBomb, block.node, block.blockType); break;
+                    case 3: CreateSpecialBlock(vRocket, specialBlockNode); break;
+                    case 4: CreateSpecialBlock(hRocket, specialBlockNode); break;
+                    case 5: CreateSpecialBlock(bomb, specialBlockNode); break;
+                    default: CreateSpecialBlock(colorBomb, specialBlockNode, specialBlockType); break;
                 }
 
                 GameManager.Instance.ChangeState(GameState.Falling);
             }
         }
+        else if (GameManager.Instance._state == GameState.Manipulating)
+        {
+            TryModifyBlock(block);
+            return;
+        }
         else
         {
             handler.DecreaseMove();
             GameManager.Instance.ChangeState(GameState.Blasting);
-            specialBlocks.Enqueue(block);
-            BlastSpecialBlocks();
+            if (block.gameObject.activeInHierarchy)
+                block.ForceShake(0.3f, 0.1f);
+            StartCoroutine(ProcessSpecialBlocks(block));
+            return;
         }
-
-
-        block.Shake(0.3f, 0.1f);
         //ObjectPool.Instance.PlaySound(5);
     }
 
 
     private void CreateSpecialBlock(GameObject specialBlock, Node aNode, int blockType = -1)
     {
-        var specialBlockObject = Instantiate(specialBlock, aNode.Pos, Quaternion.identity, aNode.transform);
-        Block b = specialBlockObject.GetComponent<Block>();
+        if (specialBlock == null || aNode == null)
+        {
+            Debug.LogError("BlockManager: Special block prefab or target node missing.");
+            return;
+        }
+
+        GridManager.freeNodes.Remove(aNode);
+
+        int poolIndex = EnsurePoolIndex(specialBlock);
+        Block b = SpawnBlockFromPool(poolIndex, specialBlock, aNode.Pos, aNode.transform);
+        if (b == null)
+            return;
 
         // Eğer bu block bir ColorBombBlock ise targetColorType ata
         ColorBombBlock colorBombBlock = b as ColorBombBlock;
@@ -194,8 +278,8 @@ public class BlockManager : MonoBehaviour
         blocks.Add(b);
 
         Vector3 initialSize = b.transform.localScale;
-        specialBlockObject.transform.localScale = Vector3.zero;
-        specialBlockObject.transform.DOScale(initialSize, 0.7f).SetEase(Ease.OutBack);
+        b.transform.localScale = Vector3.zero;
+        b.transform.DOScale(initialSize, 0.7f).SetEase(Ease.OutBack);
     }
 
 
@@ -216,37 +300,62 @@ public class BlockManager : MonoBehaviour
     }
 
 
-    private void BlastSpecialBlocks()
+    private IEnumerator ProcessSpecialBlocks(Block initialBlock)
     {
-        StartCoroutine(ChangeStateDelayed(0.31f, GameState.Falling));
-        while (specialBlocks.Count > 0)
+        var queue = new Queue<Block>();
+        var visitedSpecials = new HashSet<Block>();
+        queue.Enqueue(initialBlock);
+        visitedSpecials.Add(initialBlock);
+
+        while (queue.Count > 0)
         {
-            Block specialBlock = specialBlocks.Dequeue();
+            var specialBlock = queue.Dequeue();
+            if (specialBlock == null)
+                continue;
 
             specialBlock.isBeingDestroyed = true;
-            HashSet<Block> blockGroup = specialBlock.DetermineGroup();
+            var blockGroup = specialBlock.DetermineGroup();
+
+            var regularsToBlast = new HashSet<Block>();
 
             foreach (var item in blockGroup)
             {
-                if (item is RegularBlock)
-                    regularBlocks.Remove(item as RegularBlock);
-                else
-                {
-                    if (item != blockGroup.First() && !item.isBeingDestroyed)
-                    {
-                        item.isBeingDestroyed = true;
-                        specialBlocks.Enqueue(item);
-                    }
-                }
-                if (item.blockType == handler.targetBlockType)
-                    handler.UpdateTarget(item, 1);
+                if (item == null)
+                    continue;
 
-                StartCoroutine(DelayedBlastBlock(item, 0.3f));
+                if (item.gameObject.activeInHierarchy)
+                    item.ForceShake(0.4f, 0.15f);
+
+                if (item.blockType == handler.targetBlockType)
+                {
+                    handler.UpdateTarget(item, 1);
+                    handler.PlayTargetCollectAnimation(
+                        item.GetComponent<SpriteRenderer>()?.sprite,
+                        item.GetComponent<SpriteRenderer>()?.color ?? Color.white,
+                        item.transform.position,
+                        4f);
+                }
+
+                if (item is RegularBlock regular)
+                {
+                    regularBlocks.Remove(regular);
+                    regularsToBlast.Add(item);
+                }
+                else if (item != specialBlock && visitedSpecials.Add(item))
+                {
+                    queue.Enqueue(item);
+                }
             }
-            //HighlightGroupBeforeDestroy(blockGroup);
+
+            yield return new WaitForSeconds(0.4f);
+
+            foreach (var block in regularsToBlast)
+                BlastBlock(block);
+
+            BlastBlock(specialBlock);
         }
 
-
+        GameManager.Instance.ChangeState(GameState.Falling);
     }
     IEnumerator ChangeStateDelayed(float aDelay, GameState aState)
     {
@@ -265,99 +374,62 @@ public class BlockManager : MonoBehaviour
     }
     private void BlastBlock(Block b)
     {
-        GridManager.freeNodes.Add(b.node);
+        if (b == null)
+            return;
+
+        var currentNode = b.node;
+        var blastPosition = currentNode != null ? (Vector3)currentNode.Pos : b.transform.position;
+        if (currentNode != null)
+        {
+            GridManager.freeNodes.Add(currentNode);
+            currentNode.OccupiedBlock = null;
+        }
         blastedBlocks.Add(b);
-        b.node.OccupiedBlock = null;
         OnBlockBlasted?.Invoke(b);
         blocks.Remove(b);
         score.UpdateScore(b);
-        Destroy(b.gameObject);
-        //ObjectPool.Instance.ReturnToBlockPool(b.blockType, b.gameObject);
-        ObjectPool.Instance.GetParticleFromPool(b.blockType, b.node.Pos, Quaternion.identity);
+        b.transform.DOKill();
+
+        if (ObjectPool.Instance != null)
+        {
+            ObjectPool.Instance.ReturnBlockToPool(b);
+        }
+        else
+        {
+            Destroy(b.gameObject);
+        }
+
+        ObjectPool.Instance?.GetParticleFromPool(b.blockType, blastPosition, Quaternion.identity);
 
     }
-
-
-
-    IEnumerator DestroyDelayed(GameObject aGameObject)
-    {
-        yield return new WaitForSeconds(0.5f);
-        Destroy(aGameObject);
-    }
-
 
 
     public void BlastAllBlocks(bool simultaneous = true)
     {
-        if (GameManager.Instance._state == GameState.WaitingInput || GameManager.Instance._state == GameState.Win)
-        {
-            Debug.Log("Tüm bloklar yok ediliyor!");
+        if (GameManager.Instance._state != GameState.WaitingInput && GameManager.Instance._state != GameState.Win)
+            return;
 
-            handler.DecreaseMove();
+        Debug.Log("Tüm bloklar yok ediliyor!");
 
-            GameManager.Instance.ChangeState(GameState.Blasting);
+        handler.DecreaseMove();
+        GameManager.Instance.ChangeState(GameState.Blasting);
 
-            if (simultaneous)
-                StartCoroutine(BlastAllBlocksSimultaneousRoutine());
-            else
-                StartCoroutine(BlastAllBlocksSequentialRoutine());
-        }
+        var specials = blocks.Where(b => b != null && !(b is RegularBlock)).ToList();
+        var regulars = blocks.Where(b => b != null && b is RegularBlock).ToList();
 
-
-
+        StartCoroutine(BlastAllSpecialsThenRegulars(specials, regulars));
     }
 
-    private IEnumerator BlastAllBlocksSimultaneousRoutine()
+    public void DestroyAllBlocksInstant()
     {
-        List<Block> allBlocks = new List<Block>(blocks);
+        if (blocks.Count == 0)
+            return;
 
-        // Hepsi için shake veya efekt tetikle
-        foreach (var b in allBlocks)
-        {
-            if (b != null && !b.isBeingDestroyed)
-            {
-                b.isBeingDestroyed = true;
-                b.Shake(0.2f, 0.15f);
-            }
-        }
-
-        yield return new WaitForSeconds(0.21f);
-
-        foreach (var b in allBlocks)
-        {
-            if (b != null)
-            {
-                if (b is RegularBlock)
-                    regularBlocks.Remove(b as RegularBlock);
-
-                if (b.blockType == handler.targetBlockType)
-                    handler.UpdateTarget(b, 1);
-
-                BlastBlock(b);
-            }
-        }
-
-        GameManager.Instance.ChangeState(GameState.Falling);
+        GameManager.Instance.ChangeState(GameState.Blasting);
+        suppressRefills = false;
+        StartCoroutine(DestroyAllBlocksImmediateRoutine());
     }
 
-    private IEnumerator BlastAllBlocksSequentialRoutine()
-    {
-        List<Block> allBlocks = new List<Block>(blocks);
-
-        foreach (var b in allBlocks)
-        {
-            if (b != null && !b.isBeingDestroyed)
-            {
-                b.isBeingDestroyed = true;
-                if (b is RegularBlock)
-                    regularBlocks.Remove(b as RegularBlock);
-
-                yield return new WaitForSeconds(0.02f);
-                BlastBlock(b);
-            }
-        }
-
-    }
 
     public void SetAllBlocksInteractable(bool interactable)
     {
@@ -378,46 +450,153 @@ public class BlockManager : MonoBehaviour
         modifyTargetType = handler.targetBlockType; // ya da UI'den seçilecek tip
         Debug.Log("Modify Mode: " + isModifyActive + " | target: " + modifyTargetType);
     }
-   public void TryModifyBlock(Block block)
-{
-    if (!isModifyActive) return;
 
-    HashSet<Block> group = block.DetermineGroup();
-
-    // Eğer zaten hedef tipteyse powerup boşa gitmesin
-    if (block.blockType == modifyTargetType)
+    public void AllowRefills()
     {
-        Debug.Log("Grup zaten hedef tipte, Modify harcanmadı.");
-        return;
+        suppressRefills = false;
     }
 
-    foreach (var b in group)
+    public void TryModifyBlock(Block block)
     {
-        Node node = b.node;
-        
-        // Eski bloktan çık
-        BlockType.Instance.RemoveBlock(b.blockType, node.gridPosition);
-        blocks.Remove(b);
+        if (!isModifyActive) return;
+        if (block == null || block.blockType == handler.targetBlockType || !(block is RegularBlock))
+            return;
 
-        Destroy(b.gameObject);
+        HashSet<Block> group = block.DetermineGroup();
+        var targetAnimations = new List<(Sprite sprite, Color color, Vector3 position)>();
 
-        // Yeni prefab oluştur
-        GameObject newBlockGO = Instantiate(blockTypes[handler.targetBlockType].gameObject, node.transform.position, Quaternion.identity, transform);
+        foreach (var b in group)
+        {
+            Node node = b.node;
 
-        Block newBlock = newBlockGO.GetComponent<Block>();
-        newBlock.node = node;
-        newBlock.blockType = modifyTargetType;
+            if (b.blockType == handler.targetBlockType)
+            {
+                var renderer = b.GetComponent<SpriteRenderer>();
+                if (renderer != null)
+                    targetAnimations.Add((renderer.sprite, renderer.color, b.transform.position));
+            }
 
-        // Yeni blok listeye ekle
-        blocks.Add(newBlock);
-        BlockType.Instance.AddBlock(modifyTargetType, node.gridPosition);
+            BlockType.Instance.RemoveBlock(b.blockType, node.gridPosition);
+            blocks.Remove(b);
+            if (b is RegularBlock rb)
+                regularBlocks.Remove(rb);
 
-        // Node bağla
-        node.OccupiedBlock = newBlock;
+            ObjectPool.Instance.ReturnBlockToPool(b);
+
+            var newPrefab = blockTypes[handler.targetBlockType];
+            int poolIndex = blockTypePoolIndices[handler.targetBlockType];
+            Block newBlock = SpawnBlockFromPool(poolIndex, newPrefab != null ? newPrefab.gameObject : null, node.transform.position, transform);
+            if (newBlock == null)
+                continue;
+            newBlock.blockType = handler.targetBlockType;
+
+            blocks.Add(newBlock);
+            if (newBlock is RegularBlock newRegular)
+                regularBlocks.Add(newRegular);
+            BlockType.Instance.AddBlock(handler.targetBlockType, node.gridPosition);
+
+            newBlock.SetBlock(node);
+        }
+
+        isModifyActive = false;
+        GameManager.Instance.ChangeState(GameManager.GameState.WaitingInput);
     }
 
-    // İşlem bitince Modify kapanır
-    isModifyActive = false;
-}
+    private Block SpawnBlockFromPool(int poolIndex, GameObject prefab, Vector3 position, Transform parent)
+    {
+        if (prefab == null)
+            return null;
+
+        Block blockInstance = null;
+        if (ObjectPool.Instance != null && poolIndex >= 0)
+        {
+            blockInstance = ObjectPool.Instance.GetBlockFromPool(poolIndex, prefab, position, Quaternion.identity, parent);
+        }
+        else
+        {
+            var obj = Instantiate(prefab, position, Quaternion.identity, parent);
+            blockInstance = obj.GetComponent<Block>();
+            if (blockInstance != null)
+                blockInstance.poolIndex = poolIndex;
+        }
+
+        return blockInstance;
+    }
+
+    private IEnumerator BlastAllSpecialsThenRegulars(List<Block> specialBlocks, List<Block> regularBlocksCopy)
+    {
+        foreach (var special in specialBlocks)
+        {
+            if (special == null || special.isBeingDestroyed)
+                continue;
+
+            special.isBeingDestroyed = true;
+            if (special.gameObject.activeInHierarchy)
+                special.ForceShake(0.3f, 0.15f);
+
+            yield return StartCoroutine(ProcessSpecialBlocks(special));
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        GameManager.Instance.ChangeState(GameState.SpawningBlocks);
+        yield return new WaitForSeconds(0.5f);
+        suppressRefills = true;
+
+        var tempRegulars = new List<Block>(regularBlocksCopy);
+        foreach (var regular in tempRegulars)
+        {
+            if (regular == null || regular.isBeingDestroyed)
+                continue;
+
+            regular.isBeingDestroyed = true;
+            if (regular.gameObject.activeInHierarchy)
+                regular.ForceShake(0.2f, 0.15f);
+            yield return new WaitForSeconds(0.05f);
+            if (regular.blockType == handler.targetBlockType)
+            {
+                var renderer = regular.GetComponent<SpriteRenderer>();
+                if (renderer != null)
+                    handler.PlayTargetCollectAnimation(renderer.sprite, renderer.color, regular.transform.position, 4f);
+            }
+            BlastBlock(regular);
+        }
+
+        GameManager.Instance.ChangeState(GameState.Falling);
+    }
+
+    private IEnumerator DestroyAllBlocksImmediateRoutine()
+    {
+        var toDestroy = new List<Block>(blocks);
+
+        foreach (var block in toDestroy)
+        {
+            if (block == null || block.isBeingDestroyed)
+                continue;
+
+            block.isBeingDestroyed = true;
+            if (block.gameObject.activeInHierarchy)
+                block.ForceShake(0.3f, 0.15f);
+        }
+
+        yield return new WaitForSeconds(0.3f);
+
+        foreach (var block in toDestroy)
+        {
+            if (block == null)
+                continue;
+
+            if (block.blockType == handler.targetBlockType)
+            {
+                handler.UpdateTarget(block, 1);
+                var renderer = block.GetComponent<SpriteRenderer>();
+                if (renderer != null)
+                    handler.PlayTargetCollectAnimation(renderer.sprite, renderer.color, block.transform.position, 4f);
+            }
+
+            BlastBlock(block);
+        }
+
+        GameManager.Instance.ChangeState(GameState.Falling);
+    }
 
 }

@@ -1,8 +1,6 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
-using System.Linq;
-using System.Collections;
-using Random = UnityEngine.Random;
 using static GameManager;
 
 public abstract class Block : MonoBehaviour
@@ -11,24 +9,40 @@ public abstract class Block : MonoBehaviour
     public bool isBlastable = false;
     public List<Block> group = new List<Block>();
     public int blockType;
+    public int poolIndex = -1;
     private BoxCollider2D boxCollider2D;
-    private bool isShaking;
+    private Tween shakeTween;
+    private Transform[] visualTransforms;
+    private Vector3[] defaultLocalScales;
+    private Quaternion[] defaultLocalRotations;
     public bool isBeingDestroyed;
     public abstract int scoreEffect { get; set; }
-
-    private Vector2 originalPosition;
 
     private void Awake()
     {
         boxCollider2D = GetComponent<BoxCollider2D>();
+        visualTransforms = GetComponentsInChildren<Transform>(true);
+        int count = visualTransforms.Length;
+        defaultLocalScales = new Vector3[count];
+        defaultLocalRotations = new Quaternion[count];
+        for (int i = 0; i < count; i++)
+        {
+            defaultLocalScales[i] = visualTransforms[i].localScale;
+            defaultLocalRotations[i] = visualTransforms[i].localRotation;
+        }
     }
 
     public void SetBlock(Node aNode)
     {
-        if (node != null) node.OccupiedBlock = null;
+        if (node != null)
+        {
+            var previous = node;
+            previous.OccupiedBlock = null;
+        }
         node = aNode;
         node.OccupiedBlock = this;
         transform.SetParent(node.transform);
+        ResetVisualState();
     }
 
     public abstract HashSet<Block> DetermineGroup();
@@ -49,43 +63,58 @@ public abstract class Block : MonoBehaviour
 
         foreach (var dir in directions)
         {
-            Node neighbourNode = GridManager.Instance._nodes.Values.FirstOrDefault(n => n.gridPosition == node.gridPosition + dir);
-            if (neighbourNode != null && neighbourNode.OccupiedBlock != null)
+            var lookupPosition = node.gridPosition + dir;
+            if (GridManager.Instance._nodes.TryGetValue(lookupPosition, out var neighbourNode))
             {
-                neighbours.Add(neighbourNode.OccupiedBlock);
+                var neighbourBlock = neighbourNode.OccupiedBlock;
+                if (neighbourBlock != null && neighbourBlock.node == neighbourNode && neighbourBlock.gameObject.activeInHierarchy)
+                    neighbours.Add(neighbourBlock);
             }
         }
         return neighbours;
     }
 
 
-    public void Shake(float aShakeDuration, float aShakeMagnitude)
+    public void Shake(float duration, float magnitude)
     {
-        if (isShaking) return;
-        isShaking = true;
-        originalPosition = transform.position;
-        StartCoroutine(ShakeCoroutine(aShakeDuration, aShakeMagnitude));
+        var startLocalPosition = transform.localPosition;
+        shakeTween?.Kill();
+        shakeTween = transform.DOShakePosition(duration, new Vector3(magnitude, magnitude, 0f))
+            .SetEase(Ease.Linear)
+            .OnComplete(() =>
+            {
+                shakeTween = null;
+                transform.localPosition = startLocalPosition;
+            });
     }
 
-    private IEnumerator ShakeCoroutine(float aShakeDuration, float aShakeMagnitude)
+    public void ForceShake(float duration, float magnitude)
     {
-        float elapsedTime = 0f;
-        while (elapsedTime < aShakeDuration)
-        {
-            float xShake = Random.Range(-aShakeMagnitude, aShakeMagnitude);
-            float yShake = Random.Range(-aShakeMagnitude, aShakeMagnitude);
-
-            transform.position = new Vector3(originalPosition.x + xShake, originalPosition.y + yShake);
-            elapsedTime += Time.deltaTime;
-            
-            yield return null;
-        }
-        transform.position = originalPosition;
-        isShaking = false;
+        shakeTween?.Kill();
+        shakeTween = null;
+        Shake(duration, magnitude);
     }
 
     public void SetBlocksInteractable(bool interactable)
     {
         boxCollider2D.enabled = interactable;
+    }
+
+    public void ResetVisualState()
+    {
+        if (visualTransforms == null)
+            return;
+
+        for (int i = 0; i < visualTransforms.Length; i++)
+        {
+            var t = visualTransforms[i];
+            if (t == null)
+                continue;
+
+            t.DOKill();
+            t.localRotation = defaultLocalRotations[i];
+            t.localScale = defaultLocalScales[i];
+        }
+
     }
 }

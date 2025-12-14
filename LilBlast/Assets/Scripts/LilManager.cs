@@ -70,9 +70,6 @@ public class LilManager : MonoBehaviour
         isManipulating = true;
         GameManager.Instance.ChangeState(GameManager.GameState.Manipulating);
 
-        // Küçük gecikme (Lil animasyon/voice trigger için)
-        yield return new WaitForSeconds(1f);
-
         int choice = Random.Range(0, 5);
         switch (choice)
         {
@@ -83,10 +80,8 @@ public class LilManager : MonoBehaviour
             case 4: DestroySpecialBlocks(); break;
         }
 
-        // Manipülasyon efektinin sürdüğü süre (animasyon için placeholder)
         yield return new WaitForSeconds(2f);
 
-        // State’i tekrar WaitingInput’a al
         BlockManager.Instance.SetAllBlocksInteractable(true);
         GameManager.Instance.ChangeState(GameManager.GameState.WaitingInput);
 

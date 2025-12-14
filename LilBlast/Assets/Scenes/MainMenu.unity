@@ -16249,6 +16249,10 @@ MonoBehaviour:
   loginPanelRoot: {fileID: 2048576234}
   loginPanel: {fileID: 2048576239}
   hideLoginPanelWhileChooserOpen: 0
+  animateOnShow: 1
+  slideDistance: 400
+  slideDuration: 0.35
+  slideEase: 27
 --- !u!114 &669898089
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23493,7 +23497,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1467882294}
         m_TargetAssemblyTypeName: PowerUpManager, Assembly-CSharp
-        m_MethodName: UsePowerShuffle
+        m_MethodName: UseModify
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -25650,6 +25654,7 @@ MonoBehaviour:
   loginRequiredNotice: {fileID: 0}
   avatarPanelRoot: {fileID: 1054569585}
   loginMethodPanel: {fileID: 669898088}
+  loginMethodPanelRoot: {fileID: 0}
   menuPanelController: {fileID: 1063160799}
   lowerPanelButtonHandler: {fileID: 189341780}
   statsButtonName: Stats Button
@@ -40543,6 +40548,9 @@ MonoBehaviour:
   - {fileID: 8161472552560778960, guid: 3716e21c2d6434e1b929462f27c4dd16, type: 3}
   - {fileID: 887387325851772620, guid: 3ed50cd5521fb4d5789b9a0517275f53, type: 3}
   - {fileID: 7985042018138347892, guid: a90ade7f683964116b0fdf5404a4cb9d, type: 3}
+  targetCollectAnchor: {fileID: 813881833}
+  targetCanvas: {fileID: 991845039}
+  collectAnimationDuration: 0.65
   moves: 0
   targetBlockType: 0
   pendingWin: 0

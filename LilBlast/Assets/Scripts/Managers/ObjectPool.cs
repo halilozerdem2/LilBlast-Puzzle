@@ -15,6 +15,8 @@ public class ObjectPool : MonoBehaviour
     public Transform pools;
 
     private Dictionary<int, Queue<GameObject>> particlePools = new Dictionary<int, Queue<GameObject>>();
+    private readonly Dictionary<int, Queue<Block>> blockPools = new Dictionary<int, Queue<Block>>();
+    private readonly Dictionary<int, GameObject> blockPrefabLookup = new Dictionary<int, GameObject>();
     private AudioSource audioSource;
 
     void Awake()
@@ -29,12 +31,22 @@ public class ObjectPool : MonoBehaviour
         if (particlePrefabs.Length == 0)
         {
             Debug.LogError("ObjectPool: Particle prefabs missing!");
-            return;
+        }
+        else
+        {
+            for (int i = 0; i < particlePrefabs.Length; i++)
+            {
+                particlePools[i] = CreatePool(particlePrefabs[i]);
+            }
         }
 
-        for (int i = 0; i < particlePrefabs.Length; i++)
+        if (blockPrefabs != null)
         {
-            particlePools[i] = CreatePool(particlePrefabs[i]);
+            for (int i = 0; i < blockPrefabs.Length; i++)
+            {
+                if (blockPrefabs[i] == null) continue;
+                RegisterBlockPrefab(i, blockPrefabs[i]);
+            }
         }
     }
 
@@ -99,5 +111,87 @@ public class ObjectPool : MonoBehaviour
         yield return new WaitForSeconds(delay);
         obj.SetActive(false);
         pool.Enqueue(obj);
+    }
+
+    public void RegisterBlockPrefab(int index, GameObject prefab)
+    {
+        if (prefab == null)
+            return;
+
+        blockPrefabLookup[index] = prefab;
+        if (!blockPools.ContainsKey(index))
+            blockPools[index] = new Queue<Block>();
+    }
+
+    public Block GetBlockFromPool(int index, GameObject prefab, Vector3 position, Quaternion rotation, Transform parent)
+    {
+        if (prefab == null)
+        {
+            Debug.LogError("ObjectPool: Requested block prefab is null.");
+            return null;
+        }
+
+        RegisterBlockPrefab(index, prefab);
+
+        var pool = blockPools[index];
+        Block blockInstance = null;
+
+        while (pool.Count > 0 && blockInstance == null)
+        {
+            blockInstance = pool.Dequeue();
+        }
+
+        if (blockInstance == null)
+        {
+            var obj = Instantiate(prefab, position, rotation, parent);
+            blockInstance = obj.GetComponent<Block>();
+        }
+
+        PrepareBlockInstance(blockInstance, index, position, rotation, parent);
+        return blockInstance;
+    }
+
+    public void ReturnBlockToPool(Block block)
+    {
+        if (block == null)
+            return;
+
+        var poolIndex = block.poolIndex;
+        if (poolIndex < 0 || !blockPools.TryGetValue(poolIndex, out var pool))
+        {
+            Destroy(block.gameObject);
+            return;
+        }
+
+        if (block.node != null)
+        {
+            if (block.node.OccupiedBlock == block)
+                block.node.OccupiedBlock = null;
+            block.node = null;
+        }
+
+        block.StopAllCoroutines();
+        block.ResetVisualState();
+        block.SetBlocksInteractable(false);
+        block.gameObject.SetActive(false);
+        block.transform.SetParent(pools != null ? pools : transform);
+        pool.Enqueue(block);
+    }
+
+    private void PrepareBlockInstance(Block blockInstance, int index, Vector3 position, Quaternion rotation, Transform parent)
+    {
+        blockInstance.poolIndex = index;
+        blockInstance.node = null; // ensure no stale node reference from previous scene
+        blockInstance.isBeingDestroyed = false;
+        blockInstance.isBlastable = false;
+        blockInstance.group?.Clear();
+        blockInstance.SetBlocksInteractable(true);
+        blockInstance.ResetVisualState();
+
+        var t = blockInstance.transform;
+        t.SetParent(parent);
+        t.position = position;
+        t.rotation = rotation;
+        blockInstance.gameObject.SetActive(true);
     }
 }

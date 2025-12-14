@@ -15,6 +15,9 @@ public class ColorBombBlock : Block
 
         foreach (var block in BlockManager.Instance.regularBlocks)
         {
+            if (block == null || block.node == null)
+                continue;
+
             if (block.blockType == targetColorType)
             {
                 blockGroup.Add(block);

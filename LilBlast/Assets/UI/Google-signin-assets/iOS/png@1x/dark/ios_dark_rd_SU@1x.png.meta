@@ -173,7 +173,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      ios_dark_rd_SU@1x_0: -8208782894988595909
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

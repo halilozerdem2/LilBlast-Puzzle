@@ -24,6 +24,7 @@ public class GridManager : MonoBehaviour
     public static List<Node> freeNodes;
     public GameObject gridPrefab;
     public CameraFitter cameraFitter;
+    private int pendingFallAnimations;
 
     private void Awake()
     {
@@ -36,6 +37,7 @@ public class GridManager : MonoBehaviour
     
     public void InitializeGrid()
     {
+        ResetGrid();
         _gridParent = null;
         _gridParent = FindAnyObjectByType<GridList>();
         if (_gridParent != null)
@@ -48,8 +50,8 @@ public class GridManager : MonoBehaviour
         {
             GenerateGrid();
         }
-            BlockManager.Instance.InitializeBlockManager();
-            GameManager.Instance.ChangeState(GameState.SpawningBlocks);
+        BlockManager.Instance.InitializeBlockManager();
+        GameManager.Instance.ChangeState(GameState.SpawningBlocks);
         
     }
 
@@ -89,6 +91,11 @@ public class GridManager : MonoBehaviour
     public void UpdateGrid()
     {
         if (GameManager.Instance._state != GameState.Falling) return;
+        if (BlockManager.Instance != null && BlockManager.Instance.SuppressRefills)
+            return;
+        UpdateOccupiedBlock();
+        pendingFallAnimations = 0;
+        bool blocksMoved = false;
         freeNodes.Clear();
         for (int x = 0; x < _width; x++)
         {
@@ -111,25 +118,31 @@ public class GridManager : MonoBehaviour
                     Block blockToMove = currentNode.OccupiedBlock;
 
                     // Eski konumu boşalt
-                    blockToMove.node.OccupiedBlock = null;
+                    var originNode = blockToMove.node;
+                    if (originNode != null)
+                    {
+                        originNode.OccupiedBlock = null;
+                        freeNodes.Add(originNode);
+                    }
 
                     // Eski boş hücre listesine ekle
-                    freeNodes.Add(blockToMove.node);
+                    // (origin node already added above)
 
                     // Blok yeni yerine taşındı, bu hücre artık boş değil
                     freeNodes.Remove(emptyNode);
 
                     blockToMove.SetBlock(emptyNode);
-                    blockToMove.transform.DOMove(emptyNode.Pos, 0.4f).SetEase(Ease.OutBounce)
-                        .OnComplete(() => {
-                            GameManager.Instance.ChangeState(GameState.SpawningBlocks);
-                        }); ;
+                    pendingFallAnimations++;
+                    blocksMoved = true;
+                    blockToMove.transform.DOMove(emptyNode.Pos, 0.35f).SetEase(Ease.OutBounce)
+                        .OnComplete(HandleBlockSettled);
 
                     emptyY++; // Bir sonraki boş hücreye geç
                 }
             }
         }
-        GameManager.Instance.ChangeState(GameState.SpawningBlocks);
+        if (!blocksMoved)
+            GameManager.Instance.ChangeState(GameState.SpawningBlocks);
 
     }
 
@@ -137,26 +150,42 @@ public class GridManager : MonoBehaviour
     public void UpdateOccupiedBlock()
     {
         foreach (var node in _nodes.Values)
+            node.OccupiedBlock = null;
+
+        foreach (var block in BlockManager.Instance.blocks)
         {
-            if (node.OccupiedBlock == null) // Sadece boş düğümler kontrol edilecek
-            {
-                foreach (var block in BlockManager.Instance.blocks)
-                {
-                    if (block.node == node) // Eğer blok bu düğüme aitse
-                    {
-                        node.OccupiedBlock = block;
-                        break; // Gereksiz tekrarları önlemek için döngüyü kır
-                    }
-                }
-            }
+            if (block == null)
+                continue;
+
+            var blockNode = block.node;
+            if (blockNode == null)
+                continue;
+
+            if (!_nodes.TryGetValue(blockNode.gridPosition, out var gridNode) || gridNode != blockNode)
+                continue;
+
+            gridNode.OccupiedBlock = block;
         }
     }
 
     public void ResetGrid()
     {
+        foreach (var node in _nodes.Values)
+        {
+            if (node != null)
+                Destroy(node.gameObject);
+        }
         _nodes.Clear();
         freeNodes.Clear();
+        pendingFallAnimations = 0;
         Debug.Log("Grid tamamen sıfırlandı.");
+    }
+
+    private void HandleBlockSettled()
+    {
+        pendingFallAnimations = Mathf.Max(0, pendingFallAnimations - 1);
+        if (pendingFallAnimations == 0)
+            GameManager.Instance.ChangeState(GameState.SpawningBlocks);
     }
 
 

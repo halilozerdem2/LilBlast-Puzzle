@@ -12,10 +12,17 @@ public class VerticalRocketBlock : Block
 
         foreach (var gridNode in GridManager.Instance._nodes.Values)
         {
-            if (gridNode.gridPosition.x == column && gridNode.OccupiedBlock != null)
-            {
-                group.Add(gridNode.OccupiedBlock);
-            }
+            if (gridNode == null)
+                continue;
+
+            if (gridNode.gridPosition.x != column)
+                continue;
+
+            var block = gridNode.OccupiedBlock;
+            if (block == null || block.node != gridNode || !block.gameObject.activeInHierarchy)
+                continue;
+
+            group.Add(block);
         }
 
         return group;

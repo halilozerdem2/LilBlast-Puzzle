@@ -99,7 +99,7 @@ public class PowerUpManager : MonoBehaviour
         Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, Camera.main.nearClipPlane + 5f);
         Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenCenter);
         Instantiate(bombanimation, worldPos, Quaternion.identity, this.transform);
-        BlockManager.Instance.BlastAllBlocks();
+        BlockManager.Instance.DestroyAllBlocksInstant();
         RegisterImmediateUsage(0, 0, 0, 1);
         UpdateButtons();
     }

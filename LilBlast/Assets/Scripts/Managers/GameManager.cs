@@ -22,13 +22,20 @@ public class GameManager : MonoBehaviour
 
    
     public GameState _state;
+    private Coroutine winSequenceRoutine;
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Application.targetFrameRate = 60; // FPS'i 60'a sabitle
         QualitySettings.vSyncCount = 0;   // VSync'i kapat
         Instance = this;
-        DontDestroyOnLoad(this);
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Start()
@@ -69,7 +76,6 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.WaitingInput:
-                BlockManager.Instance.FindAllNeighbours();
                 OnGridReady?.Invoke();
 
                 if (GameOverHandler.Instance.pendingWin)
@@ -97,7 +103,9 @@ public class GameManager : MonoBehaviour
                 var usageSnapshot = powerUpManager != null ? powerUpManager.ConsumeUsageSnapshot() : new PowerUpUsageSnapshot();
                 LevelManager.Instance.CompleteLevel(score.currentScore, handler.moves, powerUpManager.CalculateSpentPowerUpAmount(), usageSnapshot);
                 AudioManager.Instance.PlayVictorySound();
-                StartCoroutine(PlayWinSequence());
+                if (winSequenceRoutine != null)
+                    StopCoroutine(winSequenceRoutine);
+                winSequenceRoutine = StartCoroutine(PlayWinSequence());
                 break;
 
 
@@ -133,22 +141,30 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("Reset");
         // Grid ve blokları temizle
-        foreach (var block in BlockManager.Instance.blocks)
+        for (int i = BlockManager.Instance.blocks.Count - 1; i >= 0; i--)
         {
-            Destroy(block.gameObject);
+            var block = BlockManager.Instance.blocks[i];
+            if (block == null) continue;
+            if (ObjectPool.Instance != null)
+                ObjectPool.Instance.ReturnBlockToPool(block);
+            else
+                Destroy(block.gameObject);
         }
-        foreach (var node in GridManager.Instance._nodes.Values)
+        GridManager.Instance.ResetGrid();
+
+        if (winSequenceRoutine != null)
         {
-            Destroy(node);
+            StopCoroutine(winSequenceRoutine);
+            winSequenceRoutine = null;
         }
 
         BlockManager.Instance.blocks.Clear();
-        GridManager.freeNodes.Clear();
-        GridManager.Instance._nodes.Clear();
         handler.collectedBlocks.Clear();
         shuffle.availableNodes.Clear();
-        shuffle.availableNodes.Clear();
         score.ResetScore();
+        handler.pendingWin = false;
+        handler.AssignTarget();
+        BlockManager.Instance.AllowRefills();
     }
     
     private IEnumerator PlayWinSequence()
@@ -159,6 +175,7 @@ public class GameManager : MonoBehaviour
         canvas.ActivateWinPanel();
         Reset();
         AudioManager.Instance.isVictoryMode=false;
+        winSequenceRoutine = null;
     }
 
     private IEnumerator ShowLosePanelWithDelay(float delay)
