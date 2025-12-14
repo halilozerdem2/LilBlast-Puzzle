@@ -16932,7 +16932,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72b9071b685d04e51884484e498cc39b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseApiUrl: http://localhost:8080
+  baseApiUrl: http://127.0.0.1:8080
   autoGuestLogin: 1
   onGuestLoginCompleted:
     m_PersistentCalls:
@@ -43756,7 +43756,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 115db18feb8554a99b57778c6eed5c2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 0.3
+  duration: 0.6
   minAlpha: 60
   maxAlpha: 255
 --- !u!114 &1825720440

@@ -15,6 +15,7 @@ public class LilManager : MonoBehaviour
     private float manipulationTime;    // Hedef süre
     private float countdown;           // Geçen süre
     private bool isManipulating = false;
+    private bool isPaused = false;
 
     private CharacterAnimationController lilcontroller;
 
@@ -35,7 +36,7 @@ public class LilManager : MonoBehaviour
 
     private void Update()
     {
-        if (isManipulating) return;
+        if (isPaused || isManipulating) return;
 
         // Sadece oyun WaitingInput state’indeyken süreyi say
         if (GameManager.Instance._state == GameManager.GameState.WaitingInput)
@@ -88,6 +89,27 @@ public class LilManager : MonoBehaviour
         // Timer resetle
         ResetTimer();
         isManipulating = false;
+    }
+
+    public void PauseManipulations()
+    {
+        if (isPaused)
+            return;
+        isPaused = true;
+        countdown = 0f;
+        if (isManipulating)
+        {
+            StopAllCoroutines();
+            isManipulating = false;
+        }
+    }
+
+    public void ResumeManipulations()
+    {
+        if (!isPaused)
+            return;
+        ResetTimer();
+        isPaused = false;
     }
 
     // --- Manipülasyon fonksiyonları ---

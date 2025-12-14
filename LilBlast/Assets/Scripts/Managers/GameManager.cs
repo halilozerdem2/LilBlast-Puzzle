@@ -32,7 +32,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        Application.targetFrameRate = 60; // FPS'i 60'a sabitle
+        Application.targetFrameRate = 120; // FPS'i 60'a sabitle
         QualitySettings.vSyncCount = 0;   // VSync'i kapat
         Instance = this;
         DontDestroyOnLoad(gameObject);
@@ -58,15 +58,16 @@ public class GameManager : MonoBehaviour
         switch (newState)
         {
             case GameState.Menu:
-                LilManager.Instance.SetToMenuSpwnPoint();
-                Reset();
+                LilManager.Instance?.SetToMenuSpwnPoint();
+                PauseGameplaySystems();
                 canvas.ActivateMainMenu();
                 Time.timeScale = 1;
                 AudioManager.Instance.PlayMainMenuMusic();
                 break;
                 
             case GameState.Play:
-                LilManager.Instance.SetToPlaySpawn();
+                LilManager.Instance?.SetToPlaySpawn();
+                LilManager.Instance?.ResumeManipulations();
                 AudioManager.Instance.PlayGameSceneMusic();
                 handler.AssignTarget();
                 break;
@@ -165,6 +166,15 @@ public class GameManager : MonoBehaviour
         handler.pendingWin = false;
         handler.AssignTarget();
         BlockManager.Instance.AllowRefills();
+    }
+
+    private void PauseGameplaySystems()
+    {
+        BlockManager.Instance?.StopAllCoroutines();
+        BlockManager.Instance?.SetAllBlocksInteractable(false);
+        BlockManager.Instance?.AllowRefills();
+        shuffle?.StopAllCoroutines();
+        LilManager.Instance?.PauseManipulations();
     }
     
     private IEnumerator PlayWinSequence()

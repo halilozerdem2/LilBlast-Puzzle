@@ -1,47 +1,46 @@
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class MoonPulse : MonoBehaviour
 {
-    public float speed = 1f;        // Parlama hızını ayarlar
-    public float minAlpha = 140f;   // Minimum alpha değeri (0–255 arası)
-    public float maxAlpha = 255f;   // Maksimum alpha değeri (0–255 arası)
+    [SerializeField] private float duration = 0.6f;
+    [SerializeField] private float minAlpha = 140f;
+    [SerializeField] private float maxAlpha = 255f;
 
     private Image image;
-    private float alpha;
-    private bool increasing = true;
+    private Tween pulseTween;
 
     private void Awake()
     {
         image = GetComponent<Image>();
-        alpha = minAlpha / 255f;
     }
 
-    private void Update()
+    private void OnEnable()
     {
-        float alphaDelta = speed * Time.deltaTime;
+        StartPulse();
+    }
 
-        if (increasing)
-        {
-            alpha += alphaDelta;
-            if (alpha >= maxAlpha / 255f)
-            {
-                alpha = maxAlpha / 255f;
-                increasing = false;
-            }
-        }
-        else
-        {
-            alpha -= alphaDelta;
-            if (alpha <= minAlpha / 255f)
-            {
-                alpha = minAlpha / 255f;
-                increasing = true;
-            }
-        }
+    private void OnDisable()
+    {
+        pulseTween?.Kill();
+        pulseTween = null;
+    }
 
-        Color color = image.color;
-        color.a = alpha;
+    private void StartPulse()
+    {
+        if (image == null)
+            return;
+
+        float min = Mathf.Clamp01(minAlpha / 255f);
+        float max = Mathf.Clamp01(maxAlpha / 255f);
+
+        var color = image.color;
+        color.a = min;
         image.color = color;
+
+        pulseTween = image.DOFade(max, duration)
+            .SetEase(Ease.InOutSine)
+            .SetLoops(-1, LoopType.Yoyo);
     }
 }

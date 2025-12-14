@@ -1,28 +1,45 @@
+using DG.Tweening;
 using UnityEngine;
 
 public class CloudUIScroller : MonoBehaviour
 {
-    public float speed = 50f;                 // UI için genelde piksel/saniye hız
-    public float resetPositionX = -800f;      // Bulutun ekran dışına çıkacağı sol nokta
-    public float exitPositionX = 800f;        // Bulutun ekran dışına çıkacağı sağ nokta
+    [SerializeField] private float speed = 50f; // pixels per second
+    [SerializeField] private float resetPositionX = -800f;
+    [SerializeField] private float exitPositionX = 800f;
 
     private RectTransform rectTransform;
+    private Tween scrollTween;
 
     private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
     }
 
-    private void Update()
+    private void OnEnable()
     {
-        Vector2 pos = rectTransform.anchoredPosition;
-        pos.x += speed * Time.deltaTime;
-        rectTransform.anchoredPosition = pos;
+        StartScroll();
+    }
 
-        if (pos.x > exitPositionX)
-        {
-            pos.x = resetPositionX;
-            rectTransform.anchoredPosition = pos;
-        }
+    private void OnDisable()
+    {
+        scrollTween?.Kill();
+        scrollTween = null;
+    }
+
+    private void StartScroll()
+    {
+        if (rectTransform == null)
+            return;
+
+        var position = rectTransform.anchoredPosition;
+        position.x = resetPositionX;
+        rectTransform.anchoredPosition = position;
+
+        float distance = Mathf.Abs(exitPositionX - resetPositionX);
+        float duration = distance / Mathf.Max(1f, Mathf.Abs(speed));
+
+        scrollTween = rectTransform.DOAnchorPosX(exitPositionX, duration)
+            .SetEase(Ease.Linear)
+            .SetLoops(-1, LoopType.Restart);
     }
 }
