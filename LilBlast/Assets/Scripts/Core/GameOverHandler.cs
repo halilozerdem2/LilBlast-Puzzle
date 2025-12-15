@@ -34,8 +34,6 @@ public class GameOverHandler : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
-
         collectedBlocks = new List<Block>();
         AssignTarget();
     }

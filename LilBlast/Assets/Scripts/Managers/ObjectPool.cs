@@ -21,7 +21,16 @@ public class ObjectPool : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
+        DontDestroyOnLoad(gameObject);
+        if (pools == null)
+            pools = transform;
         audioSource = gameObject.AddComponent<AudioSource>();
         InitializePools();
     }
@@ -54,9 +63,10 @@ public class ObjectPool : MonoBehaviour
     {
         Queue<GameObject> pool = new Queue<GameObject>();
 
+        var parent = pools != null ? pools : transform;
         for (int j = 0; j < poolSize; j++)
         {
-            GameObject obj = Instantiate(prefab, pools.transform);
+            GameObject obj = Instantiate(prefab, parent);
             obj.SetActive(false);
             pool.Enqueue(obj);
         }
@@ -89,7 +99,15 @@ public class ObjectPool : MonoBehaviour
 
     private GameObject GetObjectFromPool(Queue<GameObject> pool, GameObject prefab, Vector3 position, Quaternion rotation)
     {
-        GameObject obj = (pool.Count > 0) ? pool.Dequeue() : Instantiate(prefab, pools.transform);
+        GameObject obj = null;
+        while (pool.Count > 0 && obj == null)
+            obj = pool.Dequeue();
+
+        var parent = pools != null ? pools : transform;
+        if (obj == null)
+            obj = Instantiate(prefab, parent);
+        else
+            obj.transform.SetParent(parent);
 
         obj.transform.position = position;
         obj.transform.rotation = rotation;
