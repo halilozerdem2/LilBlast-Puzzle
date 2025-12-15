@@ -24,6 +24,7 @@ public class GameManager : MonoBehaviour
    
     public GameState _state;
     private Coroutine winSequenceRoutine;
+    private Coroutine losePanelRoutine;
 
     private void Awake()
     {
@@ -33,8 +34,9 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        QualitySettings.vSyncCount = 1;
-        Application.targetFrameRate = -1;
+        Application.targetFrameRate = 60;
+        QualitySettings.vSyncCount = 0;
+
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
@@ -154,7 +156,10 @@ public class GameManager : MonoBehaviour
             case GameState.Lose:
                 LevelManager.Instance.FailLevel();
                 AudioManager.Instance.PlayLoseSequence();
-                StartCoroutine(ShowLosePanelWithDelay(AudioManager.Instance.loseSFX.length));
+                const float loseDelay = 1f;
+                if (losePanelRoutine != null)
+                    StopCoroutine(losePanelRoutine);
+                losePanelRoutine = StartCoroutine(ShowLosePanelWithDelay(loseDelay));
                 break;
             case GameState.Manipulating:
                 BlockManager.Instance.SetAllBlocksInteractable(false);
@@ -187,7 +192,7 @@ public class GameManager : MonoBehaviour
         shuffle?.StopAllCoroutines();
         LilManager.Instance?.PauseManipulations();
     }
-    
+
     private IEnumerator PlayWinSequence()
     {
         yield return new WaitForSeconds(1f);
@@ -200,11 +205,14 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator ShowLosePanelWithDelay(float delay)
     {
-        yield return new WaitForSeconds(delay);
-        Instance.PauseGame();
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        PauseGame();
         levelCanvas?.ActivateLostPanel();
+        losePanelRoutine = null;
     }
-    
+
     public enum GameState
     {
         Menu,

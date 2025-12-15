@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.Collections;
 
 public class LilManager : MonoBehaviour
@@ -26,12 +27,14 @@ public class LilManager : MonoBehaviour
         
         lilcontroller = GetComponent<CharacterAnimationController>();
         GameManager.OnStateChanged += OnGameStateChanged;
+        SceneManager.sceneLoaded += HandleSceneLoaded;
         ResetTimer();
     }
 
     private void OnDestroy()
     {
         GameManager.OnStateChanged -= OnGameStateChanged;
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
     }
 
     private void Update()
@@ -64,6 +67,14 @@ public class LilManager : MonoBehaviour
     {
         countdown = 0f;
         manipulationTime = Random.Range(minManipulationTime, maxManipulationTime);
+    }
+
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.buildIndex == 0)
+        {
+            SetToMenuSpwnPoint();
+        }
     }
 
     private IEnumerator DoManipulation()

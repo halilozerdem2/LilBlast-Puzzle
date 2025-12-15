@@ -46,8 +46,8 @@ public class GameOverHandler : MonoBehaviour
         targetBlockType = Random.Range(0, blockIcons.Length);
         targetBlockCount = Random.Range(50, 80);
         currentTarget = targetBlockCount;
-        moves = Random.Range(40, 55);
-       //moves = 2;
+        //moves = Random.Range(40, 55);
+       moves = 2;
         UpdateUI();
     }
 

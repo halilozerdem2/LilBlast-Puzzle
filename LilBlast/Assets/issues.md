@@ -1,6 +1,7 @@
 # Issues
 
 ## High Priority
+- [ ] **Temporarily enabled dev HTTP access** (`Assets/Plugins/Android/AndroidManifest.xml`, `Assets/Plugins/Android/res/xml/network_security_config.xml`, `ProjectSettings/Info.plist`): TEST ONLY – REMOVE FOR PROD. Delete the Android override files to fall back to Unity defaults, and remove the ATS exception (or the whole Info.plist) before shipping so HTTP is blocked again.
 - [ ] Power-up consume flow currently hits `/inventory/consume` on every use. Design a strategy that queues these requests and flushes them in batches (end of level or at intervals) to reduce backend load.
 - [ ] Facebook and Google SDK integrations are missing. Add the official SDKs and wire them into LoginManager to enable OAuth sign-ins.
 

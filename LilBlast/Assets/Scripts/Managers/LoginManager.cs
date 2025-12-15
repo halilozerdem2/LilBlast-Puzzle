@@ -461,12 +461,12 @@ public class LoginManager : MonoBehaviour
 
             var snapshot = new PlayerInventoryState
             {
-                Coins = response?.coins ?? 0,
-                Lives = response?.lives ?? 0,
-                Shuffle = response?.shuffleCount ?? 0,
-                PowerShuffle = response?.powerShuffleCount ?? 0,
-                Manipulate = response?.manipulateCount ?? 0,
-                Destroy = response?.destroyCount ?? 0
+                Coins = response?.coins ?? PlayerInventoryState.DefaultCoins,
+                Lives = response?.lives ?? PlayerInventoryState.DefaultLives,
+                Shuffle = response?.shuffleCount ?? PlayerInventoryState.DefaultPowerupCount,
+                PowerShuffle = response?.powerShuffleCount ?? PlayerInventoryState.DefaultPowerupCount,
+                Manipulate = response?.manipulateCount ?? PlayerInventoryState.DefaultPowerupCount,
+                Destroy = response?.destroyCount ?? PlayerInventoryState.DefaultPowerupCount
             };
             UpdateInventory(snapshot);
         }, error => HandleDataFetchError("inventory", error));
@@ -620,12 +620,16 @@ public class AuthSession
 [Serializable]
 public class PlayerInventoryState
 {
-    public long Coins;
-    public int Lives;
-    public int Shuffle;
-    public int PowerShuffle;
-    public int Manipulate;
-    public int Destroy;
+    public const long DefaultCoins = 100L;
+    public const int DefaultLives = 5;
+    public const int DefaultPowerupCount = 10;
+
+    public long Coins = DefaultCoins;
+    public int Lives = DefaultLives;
+    public int Shuffle = DefaultPowerupCount;
+    public int PowerShuffle = DefaultPowerupCount;
+    public int Manipulate = DefaultPowerupCount;
+    public int Destroy = DefaultPowerupCount;
 
     public PlayerInventoryState()
     {

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <!-- TEST ONLY – REMOVE FOR PROD: allow HTTP access to the local dev backend below. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.1.6</domain>
+    </domain-config>
+</network-security-config>

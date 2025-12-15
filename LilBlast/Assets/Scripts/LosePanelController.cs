@@ -2,33 +2,71 @@ using UnityEngine;
 
 public class LosePanelController : MonoBehaviour
 {
+    [SerializeField] private LevelCanvasManager levelCanvas;
+
+    private void Awake()
+    {
+        if (levelCanvas == null)
+            levelCanvas = GetComponent<LevelCanvasManager>();
+
+        if (levelCanvas == null)
+            levelCanvas = FindAnyObjectByType<LevelCanvasManager>();
+    }
+
     public void OpenAdsPanel()
     {
-        //Open Ads Panel logic
-        ContinueGame();
+        if (levelCanvas != null)
+        {
+            levelCanvas.ContinueByAds();
+            return;
+        }
 
+        ContinueGameFallback(5);
     }
 
     public void UseExtraLifeAndContinue()
     {
-        //Use Extra llife logic
-        ContinueGame();
+        if (levelCanvas != null)
+        {
+            levelCanvas.ContinueByUsingExtraLife();
+            return;
+        }
+
+        GameOverHandler.Instance?.IncreaseMoves();
+        GameManager.Instance?.ResumeGame();
     }
+
     public void GoToMainMenu()
     {
+        if (levelCanvas != null)
+        {
+            levelCanvas.ReturnToMainMenu();
+            return;
+        }
 
+        GameManager.Instance?.ChangeState(GameManager.GameState.Menu);
+    }
 
-    }
-    private void ContinueGame(int aAmount = 5)
-    {
-        if(GameManager.Instance._state == GameManager.GameState.Lose)
-            GameOverHandler.Instance.moves += aAmount;
-        GameManager.Instance.ResumeGame();
-        
-    }
     public void TryAgain()
     {
-        
+        if (levelCanvas != null)
+        {
+            levelCanvas.TryAgain();
+            return;
+        }
+
+        Time.timeScale = 1f;
+        GameManager.Instance?.RestartGame();
     }
-    
+
+    private void ContinueGameFallback(int extraMoves)
+    {
+        if (GameManager.Instance != null && GameManager.Instance._state == GameManager.GameState.Lose)
+        {
+            if (GameOverHandler.Instance != null)
+                GameOverHandler.Instance.moves += extraMoves;
+        }
+
+        GameManager.Instance?.ResumeGame();
+    }
 }
