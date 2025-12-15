@@ -90,40 +90,30 @@ public class LevelManager : MonoBehaviour
 
     public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        GameManager.Instance.Reset();
-        int buildIndex = scene.buildIndex;
+        bool isGameplayScene = scene.buildIndex > 0;
+        HandleSceneLoaded(scene, isGameplayScene);
+    }
 
+    private void HandleSceneLoaded(Scene scene, bool isGameplayScene)
+    {
+        int buildIndex = scene.buildIndex;
         Debug.Log($"Scene loaded: {scene.name} (Index: {buildIndex})");
-        if(buildIndex >0) GameManager.Instance.ChangeState(GameManager.GameState.Play);
+
+        if (isGameplayScene)
+        {
+            gridManager = FindObjectOfType<GridManager>();
+            blockManager = FindObjectOfType<BlockManager>();
+            GameManager.Instance.ChangeState(GameManager.GameState.Play);
+            gridManager?.InitializeGrid();
+        }
+        else
+        {
+            gridManager = null;
+            blockManager = null;
+        }
+
         StartLevel(buildIndex);
         OnLevelSceneLoaded?.Invoke();
-
-        switch (buildIndex)
-        {
-            case 0: // Level 1
-                    //gridManager.InitializeGrid();
-                break;
-
-            case 1: // Level 2
-                gridManager.InitializeGrid();
-                break;
-
-            case 2: // Level 3
-                gridManager.InitializeGrid();
-                break;
-            case 3: // Level 4
-                gridManager.InitializeGrid();
-                break;
-            case 4: // Level 5
-                gridManager.InitializeGrid();
-                break;
-            case 5: // Level 6
-                gridManager.InitializeGrid();
-                break;
-
-            default:
-                break;
-        }
     }
 
     public void LoadLevel(int levelIndex)

@@ -18,6 +18,8 @@
 - [ ] **Stop copying `freeNodes`** (`Assets/Scripts/Managers/Block/BlockManager.cs:52-84`): iterate directly without `freeNodes.ToList()` to save 1‑2%.
 - [ ] **Stop running the full game loop on the main menu** (`GameManager`, `LilManager`, `BlockManager`, `ShuffleManager`): entering the menu still calls `GameManager.Reset` (destroying/rebuilding the grid) and leaves all managers/coroutines active, so CPU stays high even when the board is hidden. Move heavy logic out of `GameState.Menu`, stop LilManager manipulations there, and cancel leftover coroutines when the menu scene is active.
 - [ ] **Prevent duplicate resets during level transitions** (`LevelManager.OnSceneLoaded`, `GameManager.Reset`, `GridManager.ResetGrid`): loading a level triggers Reset twice (once from win sequence, once from `OnSceneLoaded`), causing extra destruction/spawn work. Gate the second reset and only rebuild the grid once per scene.
+- [ ] **Split LevelManager scene events** (`Assets/Scripts/LevelManager.cs`): replace single `OnLevelSceneLoaded` logic with two explicit callbacks (`OnMenuSceneLoaded`, `OnLevelSceneLoaded`) so persistent managers can rewire references based on scene type without extra checks/build index assumptions.
+- [ ] **Route all scene-loaded logic through LevelManager**: remove direct `SceneManager.sceneLoaded` subscriptions from GameManager, Canvas managers, HUD updaters, etc., and have them listen to the new `OnMenuSceneLoaded` / `OnLevelSceneLoaded` events instead to avoid duplicated logic and unsubscribed handlers.
 
 Applying the full list should deliver roughly 50‑60% FPS improvement during heavy blast chains.
 
@@ -26,6 +28,7 @@ Applying the full list should deliver roughly 50‑60% FPS improvement during he
 ### 1. Manager Classification
 - **Persistent (DontDestroyOnLoad)**
   - `GameManager`: global state machine, scene load orchestration, persistent events.
+  - `CanvasManager`: single root canvas/panel controller; panels exist across scenes so keeping this singleton avoids recreating the UI hierarchy.
   - `AudioManager`: cross-scene music/SFX control; already lightweight and needs continuous playback.
   - `ObjectPool` / Pool service: maintains reusable prefabs; keeps allocations low across scenes.
   - `PowerUpManager`, `PlayerDataController`, `LoginManager`: session-level data/services only, no grid dependencies.
@@ -59,7 +62,7 @@ Applying the full list should deliver roughly 50‑60% FPS improvement during he
 - Remove static references between scene-bound managers and persistent ones (e.g., replace `BlockManager.Instance` usage in persistent classes with dependency injection or event subscriptions).
 
 ### 4. Code-Level TODOs
-- Remove `DontDestroyOnLoad` calls from `GridManager`, `BlockManager`, `ShuffleManager`, `LilManager`, `CanvasManager`, `GameOverHandler`, `ObstacleManager`, etc.
+- Remove `DontDestroyOnLoad` calls from `GridManager`, `BlockManager`, `ShuffleManager`, `LilManager`, `GameOverHandler`, `ObstacleManager`, etc.
 - Delete or simplify `GameManager.Reset()` to only reset persistent services (handler targets, score). Grid/Block teardown moves to GameplayRoot destruction.
 - Modify `LevelManager.OnSceneLoaded` to instantiate/track GameplayRoot instead of manually calling `gridManager.InitializeGrid()` on persistent objects.
 - Replace `Update()` polling where possible (LilManager countdown, menu panel controller, audio track checks) with coroutines or events tied to GameplayRoot lifecycle.

@@ -9,9 +9,9 @@ onBoardingDoNotAskAgain = true
 showPackageIndexes = false
 showStatusBar = false
 scopes = {
-	"last_search.66F56946" = "corner radius"
+	"last_search.66F56946" = "Missing"
 	"OpenInspectorPreview.66F56946" = "0"
-	"currentGroup.66F56946" = null
+	"currentGroup.66F56946" = "all"
 	"picker_window_position_offset.075BCD15" = "139;36;320;550"
 	"picker_visibility_flags.075BCD15" = "264"
 	"picker_item_size.075BCD15" = "96"
@@ -72,6 +72,12 @@ providers = {
 objectSelectors = {
 }
 recentSearches = [
+	"Missing"
+	"Mono script"
+	"mo"
+	"SerializedObjectNotCreatableException: Object at index 0 is null UnityEditor.Editor.CreateSerializedObject () (at /Users/bokken/build/output/unity/unity/Editor/Mono/Inspector/Editor.cs:717) UnityEditor.Editor.GetSerializedObjectInternal () (at /Users/bokken/build/output/unity/unity/Editor/Mono/Inspector/Editor.cs:689) UnityEditor.Editor.get_serializedObject () (at /Users/bokken/build/output/unity/unity/Editor/Mono/Inspector/Editor.cs:583) UnityEditor.GameObjectInspector.OnEnable () (at /Users/bokken/build/output/unity/unity/Editor/Mono/Inspector/GameObjectInspector.cs:251) "
+	""
+	"missing"
 	"corner"
 	"renderer textu"
 	"renderer"

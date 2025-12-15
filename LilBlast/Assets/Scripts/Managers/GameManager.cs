@@ -16,7 +16,8 @@ public class GameManager : MonoBehaviour
     
     [SerializeField] ShuffleManager shuffle;
    [SerializeField] PowerUpManager powerUpManager;
-    [SerializeField] CanvasManager canvas;
+    [SerializeField] MenuCanvasManager menuCanvas;
+    [SerializeField] LevelCanvasManager levelCanvas;
     [SerializeField] ScoreManager score;
     [SerializeField] GameOverHandler handler;
 
@@ -32,18 +33,55 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        Application.targetFrameRate = 120; // FPS'i 60'a sabitle
-        QualitySettings.vSyncCount = 0;   // VSync'i kapat
+        QualitySettings.vSyncCount = 1;
+        Application.targetFrameRate = -1;
+
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
     }
 
     private void Start()
     {
+        RefreshSceneBoundReferences();
         ChangeState(GameState.Menu);
         if(LevelManager.GetLastCompletedLevel()>=4)
             LevelManager.ResetProgress();
         
+    }
+
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        RefreshSceneBoundReferences();
+    }
+
+    private void RefreshSceneBoundReferences()
+    {
+        
+
+        if (SceneManager.GetActiveScene().buildIndex == 0)
+        {
+            menuCanvas = FindObjectOfType<MenuCanvasManager>();
+            levelCanvas = null;
+            handler = null;
+            score = null;
+            powerUpManager = null;
+        }
+        else
+        {
+            shuffle = FindObjectOfType<ShuffleManager>();
+            levelCanvas = FindObjectOfType<LevelCanvasManager>();
+            menuCanvas = null;
+            handler = FindObjectOfType<GameOverHandler>();
+            score = FindObjectOfType<ScoreManager>();
+            powerUpManager = FindObjectOfType<PowerUpManager>();
+        }
     }
 
     public void ChangeState(GameState newState)
@@ -58,9 +96,12 @@ public class GameManager : MonoBehaviour
         switch (newState)
         {
             case GameState.Menu:
+                if (SceneManager.GetActiveScene().buildIndex != 0)
+                {
+                    SceneManager.LoadScene(0);
+                    return;
+                }
                 LilManager.Instance?.SetToMenuSpwnPoint();
-                PauseGameplaySystems();
-                canvas.ActivateMainMenu();
                 Time.timeScale = 1;
                 AudioManager.Instance.PlayMainMenuMusic();
                 break;
@@ -96,7 +137,7 @@ public class GameManager : MonoBehaviour
                 PauseGame();
                 break;
             case GameState.Shuffling:
-                shuffle.HandleShuffle();
+                shuffle?.HandleShuffle();
                 OnGridReady?.Invoke();  
                 break;
 
@@ -138,36 +179,6 @@ public class GameManager : MonoBehaviour
         BlockManager.Instance.SetAllBlocksInteractable(true);
         Instance.ChangeState(GameManager.GameState.WaitingInput);
     }
-    public void Reset()
-    {
-        Debug.Log("Reset");
-        // Grid ve blokları temizle
-        for (int i = BlockManager.Instance.blocks.Count - 1; i >= 0; i--)
-        {
-            var block = BlockManager.Instance.blocks[i];
-            if (block == null) continue;
-            if (ObjectPool.Instance != null)
-                ObjectPool.Instance.ReturnBlockToPool(block);
-            else
-                Destroy(block.gameObject);
-        }
-        GridManager.Instance.ResetGrid();
-
-        if (winSequenceRoutine != null)
-        {
-            StopCoroutine(winSequenceRoutine);
-            winSequenceRoutine = null;
-        }
-
-        BlockManager.Instance.blocks.Clear();
-        handler.collectedBlocks.Clear();
-        shuffle.availableNodes.Clear();
-        score.ResetScore();
-        handler.pendingWin = false;
-        handler.AssignTarget();
-        BlockManager.Instance.AllowRefills();
-    }
-
     private void PauseGameplaySystems()
     {
         BlockManager.Instance?.StopAllCoroutines();
@@ -182,8 +193,7 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(1f);
         BlockManager.Instance.BlastAllBlocks(false);
         yield return new WaitForSeconds(5.0f);
-        canvas.ActivateWinPanel();
-        Reset();
+        levelCanvas?.ActivateWinPanel();
         AudioManager.Instance.isVictoryMode=false;
         winSequenceRoutine = null;
     }
@@ -192,7 +202,7 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         Instance.PauseGame();
-        canvas.ActivateLostPanel();
+        levelCanvas?.ActivateLostPanel();
     }
     
     public enum GameState

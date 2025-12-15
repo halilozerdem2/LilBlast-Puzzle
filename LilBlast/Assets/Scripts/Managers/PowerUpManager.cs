@@ -4,7 +4,6 @@ using UnityEngine.UI;
 public class PowerUpManager : MonoBehaviour
 {
     [SerializeField] ShuffleManager shuffle;
-    [SerializeField] GameObject bombanimation;
     [SerializeField] private PlayerDataController playerDataController;
 
     // Buton referansları
@@ -25,14 +24,11 @@ public class PowerUpManager : MonoBehaviour
     private int usedModify;
     private int usedDestroy;
 
-    private void Awake()
+    private void OnEnable()
     {
         if (playerDataController == null)
             playerDataController = FindObjectOfType<PlayerDataController>();
-    }
 
-    private void OnEnable()
-    {
         UpdateButtons();
         LevelManager.OnLevelSceneLoaded += TotalPowerUps;
         if (playerDataController != null)
@@ -96,9 +92,6 @@ public class PowerUpManager : MonoBehaviour
 
         destroyCount--;
         usedDestroy++;
-        Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, Camera.main.nearClipPlane + 5f);
-        Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenCenter);
-        Instantiate(bombanimation, worldPos, Quaternion.identity, this.transform);
         BlockManager.Instance.DestroyAllBlocksInstant();
         RegisterImmediateUsage(0, 0, 0, 1);
         UpdateButtons();
