@@ -33,8 +33,9 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        //Application.targetFrameRate = 60; // FPS'i 60'a sabitle
-        //QualitySettings.vSyncCount = 0;   // VSync'i kapat
+        QualitySettings.vSyncCount = 1;
+        Application.targetFrameRate = -1;
+
         Instance = this;
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += HandleSceneLoaded;
