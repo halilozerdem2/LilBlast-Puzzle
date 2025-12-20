@@ -15,7 +15,6 @@ public static class ClearAuthPlayerPrefsMenu
         PlayerPrefs.DeleteKey("LilGames.AuthProvider");
         PlayerPrefs.DeleteKey("LilGames.Username");
         PlayerPrefs.Save();
-        Debug.Log("[ClearAuthPlayerPrefsMenu] Cleared saved auth PlayerPrefs values.");
     }
 }
 #endif

@@ -25,25 +25,5 @@
 		<string>arm64</string>
 		<string>metal</string>
 	</array>
-	<!-- TEST ONLY – NOT FOR APP STORE: limit HTTP traffic to the LAN backend. -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<false/>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>192.168.1.6</key>
-			<dict>
-				<key>NSIncludesSubdomains</key>
-				<false/>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-				<key>NSExceptionRequiresForwardSecrecy</key>
-				<false/>
-				<key>NSAllowsArbitraryLoadsInWebContent</key>
-				<false/>
-			</dict>
-		</dict>
-	</dict>
 </dict>
 </plist>

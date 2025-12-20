@@ -60,7 +60,6 @@ public class ShuffleManager : MonoBehaviour
                 targetNode = PickRandomAvailableNode();
             }
 
-            Debug.Log("karışıyor");
             block.SetBlock(targetNode);
 
             ConsumeNode(targetNode);

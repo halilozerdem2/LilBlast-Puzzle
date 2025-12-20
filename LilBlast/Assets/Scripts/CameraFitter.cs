@@ -47,12 +47,5 @@ public class CameraFitter : MonoBehaviour
 
         gridParent.position = new Vector3(0f, gridWorldY, 0f) - gridCenter * finalScale;
         gridParent.localScale = new Vector3(finalScale, finalScale, 1f);
-
-        Debug.Log($"Grid Fit:\n" +
-                  $"- World Screen: {worldScreenWidth}x{worldScreenHeight}\n" +
-                  $"- Safe Area: {safeAreaWorldWidth}x{safeAreaWorldHeight}\n" +
-                  $"- Scale: {finalScale}\n" +
-                  $"- Grid Pos: {gridParent.position}\n" +
-                  $"- Bottom: {worldBottom}, Top: {worldTop}");
     }
 }

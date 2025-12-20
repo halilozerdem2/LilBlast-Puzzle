@@ -70,7 +70,6 @@ public class LoginMethodPanel : MonoBehaviour
 
     public void ShowChooser()
     {
-        Debug.Log("ShowChooser");
         if (hideLoginPanelWhileChooserOpen && loginPanelRoot != null && loginPanelRoot != gameObject)
         {
             loginPanelRoot.SetActive(false);
@@ -83,12 +82,10 @@ public class LoginMethodPanel : MonoBehaviour
         gameObject.SetActive(true);
         if (animateOnShow)
             PlaySlideIn();
-        Debug.Log(gameObject.activeSelf ? "LoginMethodPanel: true" : "LoginMethodPanel: false");
     }
 
     public void HideChooser()
     {
-        Debug.Log("HideChooser");
         StopSlideTween();
         ResetPosition();
         gameObject.SetActive(false);

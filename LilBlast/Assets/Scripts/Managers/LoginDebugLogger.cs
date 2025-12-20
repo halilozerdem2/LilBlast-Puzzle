@@ -44,21 +44,15 @@ public class LoginDebugLogger : MonoBehaviour
     {
         if (session == null)
         {
-            Debug.Log("[LoginDebugLogger] Session cleared.");
             return;
         }
-
-        var label = !string.IsNullOrEmpty(session.Username) ? session.Username : session.UserId;
-        Debug.Log($"[LoginDebugLogger] Logged in. User: {label} (Id: {session.UserId}), Provider: {session.Provider}, Guest: {session.IsGuest}");
     }
 
     private void HandleAuthError(string message)
     {
-        Debug.LogWarning($"[LoginDebugLogger] Backend error: {message}");
     }
 
     private void HandleDiagnostic(string message)
     {
-        Debug.Log($"[LoginDebugLogger] Flow: {message}");
     }
 }

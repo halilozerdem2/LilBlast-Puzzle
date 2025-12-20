@@ -64,7 +64,7 @@ public class LosePanelController : MonoBehaviour
         if (GameManager.Instance != null && GameManager.Instance._state == GameManager.GameState.Lose)
         {
             if (GameOverHandler.Instance != null)
-                GameOverHandler.Instance.moves += extraMoves;
+                GameOverHandler.Instance.AddMoves(extraMoves);
         }
 
         GameManager.Instance?.ResumeGame();

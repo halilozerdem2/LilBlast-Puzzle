@@ -34,8 +34,8 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        Application.targetFrameRate = 60;
-        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = -1;
+        QualitySettings.vSyncCount = 1;
 
 
         Instance = this;
@@ -195,12 +195,47 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator PlayWinSequence()
     {
-        yield return new WaitForSeconds(1f);
-        BlockManager.Instance.BlastAllBlocks(false);
-        yield return new WaitForSeconds(5.0f);
+        var blockManager = BlockManager.Instance;
+        blockManager?.BlastAllBlocks(false);
+
+        if (blockManager != null)
+            yield return WaitForBoardClear(blockManager);
+
+        yield return new WaitForSeconds(2f);
         levelCanvas?.ActivateWinPanel();
-        AudioManager.Instance.isVictoryMode=false;
+        AudioManager.Instance.isVictoryMode = false;
         winSequenceRoutine = null;
+    }
+
+    private IEnumerator WaitForBoardClear(BlockManager blockManager)
+    {
+        if (blockManager == null)
+            yield break;
+
+        if (!blockManager.IsClearingBoard && blockManager.blocks.Count == 0)
+            yield break;
+
+        var cleared = false;
+        void Handler() => cleared = true;
+
+        blockManager.BoardCleared += Handler;
+
+        if (!blockManager.IsClearingBoard && blockManager.blocks.Count == 0)
+            cleared = true;
+
+        while (!cleared)
+        {
+            if (blockManager == null)
+            {
+                cleared = true;
+                break;
+            }
+
+            yield return null;
+        }
+
+        if (blockManager != null)
+            blockManager.BoardCleared -= Handler;
     }
 
     private IEnumerator ShowLosePanelWithDelay(float delay)

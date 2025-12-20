@@ -164,7 +164,6 @@ public class AvatarSelectionPanel : MonoBehaviour
     {
         if (!CanModifySelection())
         {
-            Debug.Log("AvatarSelectionPanel: Login required before selecting an avatar.");
             return;
         }
 

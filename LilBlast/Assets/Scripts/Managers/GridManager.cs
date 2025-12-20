@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 using DG.Tweening;
@@ -38,17 +39,31 @@ public class GridManager : MonoBehaviour
     public void InitializeGrid()
     {
         ResetGrid();
-        _gridParent = null;
-        _gridParent = FindAnyObjectByType<GridList>();
-        if (_gridParent != null)
+        var difficultyManager = DifficultyManager.Instance;
+        bool generatedFromDifficulty = false;
+        if (difficultyManager != null)
         {
-            _width = _gridParent.Width;
-            _height = _gridParent.Height;
-            GetGridListFromScene(_gridParent);
-        }
-        else
-        {
+            var boardSize = difficultyManager.CurrentSettings.boardSize;
+            _width = Mathf.Max(1, boardSize.x);
+            _height = Mathf.Max(1, boardSize.y);
             GenerateGrid();
+            generatedFromDifficulty = true;
+        }
+
+        if (!generatedFromDifficulty)
+        {
+            _gridParent = null;
+            _gridParent = FindAnyObjectByType<GridList>();
+            if (_gridParent != null)
+            {
+                _width = _gridParent.Width;
+                _height = _gridParent.Height;
+                GetGridListFromScene(_gridParent);
+            }
+            else
+            {
+                GenerateGrid();
+            }
         }
         BlockManager.Instance.InitializeBlockManager();
         GameManager.Instance.ChangeState(GameState.SpawningBlocks);
@@ -178,7 +193,31 @@ public class GridManager : MonoBehaviour
         _nodes.Clear();
         freeNodes.Clear();
         pendingFallAnimations = 0;
-        Debug.Log("Grid tamamen sıfırlandı.");
+    }
+
+    public IEnumerator ClearBoardSequentially(BlockManager blockManager, float delayBetweenClears = 0.02f, bool processSpecials = true)
+    {
+        if (blockManager == null)
+            yield break;
+
+        for (int y = _height - 1; y >= 0; y--)
+        {
+            for (int x = 0; x < _width; x++)
+            {
+                var key = new Vector2Int(x, y);
+                if (!_nodes.TryGetValue(key, out var node) || node == null)
+                    continue;
+
+                var block = node.OccupiedBlock;
+                if (block == null)
+                    continue;
+
+                yield return blockManager.ClearBlockFromNode(block, processSpecials);
+
+                if (delayBetweenClears > 0f)
+                    yield return new WaitForSeconds(delayBetweenClears);
+            }
+        }
     }
 
     private void HandleBlockSettled()

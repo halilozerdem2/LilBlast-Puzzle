@@ -20,8 +20,6 @@ public class SceneEventManager : MonoBehaviour
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         int buildIndex = scene.buildIndex;
-        Debug.Log($"Sahne Yüklendi: {scene.name} (Index: {buildIndex})");
-
         // Eventi tetikle
         OnSceneLoaded?.Invoke(buildIndex);
     }

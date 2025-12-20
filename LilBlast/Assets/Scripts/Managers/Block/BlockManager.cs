@@ -2,7 +2,6 @@ using DG.Tweening;
 using System;
 using System.Collections.Generic;
 using System.Collections;
-using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 using static GameManager;
@@ -14,6 +13,7 @@ public class BlockManager : MonoBehaviour
 {
     public static BlockManager Instance;
     public static event Action<Block> OnBlockBlasted;
+    public event Action BoardCleared;
 
     [SerializeField] private Block[] blockTypes;
 
@@ -34,6 +34,9 @@ public class BlockManager : MonoBehaviour
     public int modifyTargetType = -1; // Hedef tip (örn. handler.targetBlockType)
 
     public bool SuppressRefills => suppressRefills;
+    public bool IsClearingBoard => isClearingBoard;
+
+    private bool isClearingBoard;
 
     private void Awake()
     {
@@ -55,7 +58,6 @@ public class BlockManager : MonoBehaviour
         prefabPoolIndices.Clear();
         RegisterBlockPrefabs();
         suppressRefills = false;
-        Debug.Log("BlockManager yeniden başlatıldı.");
     }
 
     private void RegisterBlockPrefabs()
@@ -114,6 +116,10 @@ public class BlockManager : MonoBehaviour
         List<Node> nodesToFill = dedupedNodes;
         int counter = 0, spawnIndex;
         int targetBlockType = handler.targetBlockType;
+        float difficultySpawnChance = Mathf.Clamp01(
+            DifficultyManager.Instance != null
+                ? DifficultyManager.Instance.CurrentSettings.blockSpawnAccuracyPercentage
+                : 0.15f);
 
         foreach (var node in nodesToFill)
         {
@@ -121,7 +127,7 @@ public class BlockManager : MonoBehaviour
             int randomIndex = Random.Range(0, blockTypes.Length);
 
             float spawnAccuricyPercentage = Random.Range(0f, 1f);
-            if (spawnAccuricyPercentage <= 0.15f)
+            if (spawnAccuricyPercentage <= difficultySpawnChance)
                 spawnIndex = targetBlockType;
             else
                 spawnIndex = randomIndex;
@@ -409,15 +415,18 @@ public class BlockManager : MonoBehaviour
         if (GameManager.Instance._state != GameState.WaitingInput && GameManager.Instance._state != GameState.Win)
             return;
 
-        Debug.Log("Tüm bloklar yok ediliyor!");
+        if (blocks.Count == 0)
+        {
+            isClearingBoard = true;
+            NotifyBoardCleared();
+            return;
+        }
 
+        isClearingBoard = true;
         handler.DecreaseMove();
         GameManager.Instance.ChangeState(GameState.Blasting);
 
-        var specials = blocks.Where(b => b != null && !(b is RegularBlock)).ToList();
-        var regulars = blocks.Where(b => b != null && b is RegularBlock).ToList();
-
-        StartCoroutine(BlastAllSpecialsThenRegulars(specials, regulars));
+        StartCoroutine(ClearBoardUsingGrid(0.02f));
     }
 
     public void DestroyAllBlocksInstant()
@@ -427,7 +436,10 @@ public class BlockManager : MonoBehaviour
 
         GameManager.Instance.ChangeState(GameState.Blasting);
         suppressRefills = false;
-        StartCoroutine(DestroyAllBlocksImmediateRoutine());
+        isClearingBoard = true;
+        ClearBoardInstant();
+        GameManager.Instance.ChangeState(GameState.Falling);
+        NotifyBoardCleared();
     }
 
 
@@ -448,7 +460,6 @@ public class BlockManager : MonoBehaviour
     {
         isModifyActive = !isModifyActive;
         modifyTargetType = handler.targetBlockType; // ya da UI'den seçilecek tip
-        Debug.Log("Modify Mode: " + isModifyActive + " | target: " + modifyTargetType);
     }
 
     public void AllowRefills()
@@ -523,67 +534,71 @@ public class BlockManager : MonoBehaviour
         return blockInstance;
     }
 
-    private IEnumerator BlastAllSpecialsThenRegulars(List<Block> specialBlocks, List<Block> regularBlocksCopy)
+    private IEnumerator ClearBoardUsingGrid(float delayBetweenClears)
     {
-        foreach (var special in specialBlocks)
-        {
-            if (special == null || special.isBeingDestroyed)
-                continue;
-
-            special.isBeingDestroyed = true;
-            if (special.gameObject.activeInHierarchy)
-                special.ForceShake(0.3f, 0.15f);
-
-            yield return StartCoroutine(ProcessSpecialBlocks(special));
-            yield return new WaitForSeconds(0.1f);
-        }
-
-        GameManager.Instance.ChangeState(GameState.SpawningBlocks);
-        yield return new WaitForSeconds(0.5f);
         suppressRefills = true;
 
-        var tempRegulars = new List<Block>(regularBlocksCopy);
-        foreach (var regular in tempRegulars)
+        var grid = GridManager.Instance;
+        if (grid != null)
         {
-            if (regular == null || regular.isBeingDestroyed)
-                continue;
-
-            regular.isBeingDestroyed = true;
-            if (regular.gameObject.activeInHierarchy)
-                regular.ForceShake(0.2f, 0.15f);
-            yield return new WaitForSeconds(0.05f);
-            if (regular.blockType == handler.targetBlockType)
+            var specialBuffer = CollectSpecialBlocks(grid);
+            foreach (var special in specialBuffer)
             {
-                var renderer = regular.GetComponent<SpriteRenderer>();
-                if (renderer != null)
-                    handler.PlayTargetCollectAnimation(renderer.sprite, renderer.color, regular.transform.position, 4f);
+                if (special == null)
+                    continue;
+
+                yield return ClearBlockFromNode(special, true);
             }
-            BlastBlock(regular);
+
+            yield return grid.ClearBoardSequentially(this, delayBetweenClears, false);
+        }
+        else
+        {
+            var snapshot = new List<Block>(blocks);
+            foreach (var block in snapshot)
+            {
+                if (block == null || block is RegularBlock)
+                    continue;
+
+                yield return ClearBlockFromNode(block, true);
+            }
+
+            foreach (var block in snapshot)
+            {
+                if (block == null || !(block is RegularBlock))
+                    continue;
+
+                yield return ClearBlockFromNode(block, false);
+
+                if (delayBetweenClears > 0f)
+                    yield return new WaitForSeconds(delayBetweenClears);
+            }
         }
 
         GameManager.Instance.ChangeState(GameState.Falling);
+        NotifyBoardCleared();
     }
 
-    private IEnumerator DestroyAllBlocksImmediateRoutine()
+    internal IEnumerator ClearBlockFromNode(Block block, bool processSpecials)
     {
-        var toDestroy = new List<Block>(blocks);
+        if (block == null)
+            yield break;
 
-        foreach (var block in toDestroy)
+        block.isBeingDestroyed = true;
+
+        if (processSpecials && !(block is RegularBlock))
         {
-            if (block == null || block.isBeingDestroyed)
-                continue;
-
-            block.isBeingDestroyed = true;
             if (block.gameObject.activeInHierarchy)
-                block.ForceShake(0.3f, 0.15f);
+                block.ForceShake(0.2f, 0.12f);
+
+            yield return ProcessSpecialBlocks(block);
+            yield return new WaitForSeconds(0.05f);
         }
-
-        yield return new WaitForSeconds(0.3f);
-
-        foreach (var block in toDestroy)
+        else
         {
-            if (block == null)
-                continue;
+            if (block.gameObject.activeInHierarchy)
+                block.ForceShake(0.15f, 0.12f);
+            yield return new WaitForSeconds(0.02f);
 
             if (block.blockType == handler.targetBlockType)
             {
@@ -595,8 +610,85 @@ public class BlockManager : MonoBehaviour
 
             BlastBlock(block);
         }
+    }
 
-        GameManager.Instance.ChangeState(GameState.Falling);
+    private void ClearBoardInstant()
+    {
+        var grid = GridManager.Instance;
+        if (grid != null)
+        {
+            for (int y = grid._height - 1; y >= 0; y--)
+            {
+                for (int x = 0; x < grid._width; x++)
+                {
+                    var key = new Vector2Int(x, y);
+                    if (!grid._nodes.TryGetValue(key, out var node) || node == null)
+                        continue;
+
+                    var block = node.OccupiedBlock;
+                    RemoveBlockInstant(block);
+                }
+            }
+        }
+        else
+        {
+            foreach (var block in new List<Block>(blocks))
+                RemoveBlockInstant(block);
+        }
+    }
+
+    private void RemoveBlockInstant(Block block)
+    {
+        if (block == null || block.isBeingDestroyed)
+            return;
+
+        block.isBeingDestroyed = true;
+
+        if (block.blockType == handler.targetBlockType)
+        {
+            handler.UpdateTarget(block, 1);
+            var renderer = block.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+                handler.PlayTargetCollectAnimation(renderer.sprite, renderer.color, block.transform.position, 4f);
+        }
+
+        BlastBlock(block);
+    }
+
+    private List<Block> CollectSpecialBlocks(GridManager grid)
+    {
+        var specials = new List<Block>();
+        if (grid == null || grid._nodes == null || grid._nodes.Count == 0)
+            return specials;
+
+        var seen = new HashSet<Block>();
+        for (int y = grid._height - 1; y >= 0; y--)
+        {
+            for (int x = 0; x < grid._width; x++)
+            {
+                var key = new Vector2Int(x, y);
+                if (!grid._nodes.TryGetValue(key, out var node) || node == null)
+                    continue;
+
+                var block = node.OccupiedBlock;
+                if (block == null || block is RegularBlock)
+                    continue;
+
+                if (seen.Add(block))
+                    specials.Add(block);
+            }
+        }
+
+        return specials;
+    }
+
+    private void NotifyBoardCleared()
+    {
+        if (!isClearingBoard)
+            return;
+
+        isClearingBoard = false;
+        BoardCleared?.Invoke();
     }
 
 }

@@ -8,6 +8,8 @@ public class LevelCanvasManager : MonoBehaviour
     [SerializeField] private GameObject winPanel;
     [SerializeField] private GameObject pausePanel;
     [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private int mainMenuBuildIndex = 0;
+    [SerializeField] private int lastGameplayLevelBuildIndex = 5;
 
     private GameOverHandler handler;
 
@@ -62,8 +64,15 @@ public class LevelCanvasManager : MonoBehaviour
         Time.timeScale = 1f;
         Scene current = SceneManager.GetActiveScene();
         int nextIndex = current.buildIndex + 1;
+        if (current.buildIndex >= lastGameplayLevelBuildIndex)
+        {
+            SceneManager.LoadScene(mainMenuBuildIndex);
+            GameManager.Instance.ChangeState(GameManager.GameState.Menu);
+            return;
+        }
+
         if (nextIndex >= SceneManager.sceneCountInBuildSettings)
-            nextIndex = 0;
+            nextIndex = mainMenuBuildIndex;
         SceneManager.LoadScene(nextIndex);
     }
 
@@ -75,7 +84,7 @@ public class LevelCanvasManager : MonoBehaviour
 
     public void ContinueByAds()
     {
-        handler.moves += 5;
+        handler.AddMoves(5);
         Resume();
     }
 

@@ -15,12 +15,14 @@ public class LoginManager : MonoBehaviour
     private const string UserKey = "LilGames.UserId";
     private const string ProviderKey = "LilGames.AuthProvider";
     private const string UsernameKey = "LilGames.Username";
+    private const string OfflineUserKey = "LilGames.OfflineUserId";
 
     public static LoginManager Instance { get; private set; }
 
     [Header("Backend")]
     [SerializeField] private string baseApiUrl = "https://api.lilgamelabs.com";
     [SerializeField] private bool autoGuestLogin = true;
+    [SerializeField] private bool offlineMode = false;
 
     [Header("UI Hooks")]
     [SerializeField] private UnityEvent onGuestLoginCompleted;
@@ -42,6 +44,8 @@ public class LoginManager : MonoBehaviour
     public AuthSession CurrentSession => currentSession;
     public bool HasAuthenticatedUser => currentSession != null && !currentSession.IsGuest;
     public bool IsBusy => isBusy;
+    public string BaseApiUrl => baseApiUrl;
+    public bool IsOfflineMode => offlineMode;
 
     private AuthApiClient authClient;
     private AuthSession currentSession;
@@ -60,14 +64,30 @@ public class LoginManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        authClient = new AuthApiClient(baseApiUrl);
-        LoadSessionFromPrefs();
+        if (offlineMode)
+        {
+            authClient = null;
+            InitializeOfflineSession();
+        }
+        else
+        {
+            authClient = new AuthApiClient(baseApiUrl);
+            LoadSessionFromPrefs();
+        }
         UpdateLoginUiState(HasAuthenticatedUser);
         EnsurePlayerDataController();
     }
 
     private void Start()
     {
+        if (offlineMode)
+        {
+            EmitFlowDiagnostic("Offline mode active. Skipping backend login flow.");
+            SessionChanged?.Invoke(currentSession);
+            onGuestLoginCompleted?.Invoke();
+            return;
+        }
+
         if (!autoGuestLogin)
             return;
 
@@ -104,6 +124,9 @@ public class LoginManager : MonoBehaviour
 
     public void LoginWithEmail(string email, string username, string password)
     {
+        if (BlockedByOfflineMode("username/password login", true))
+            return;
+
         if (isBusy)
             return;
 
@@ -127,6 +150,9 @@ public class LoginManager : MonoBehaviour
 
     public void RegisterWithEmail(string email, string username, string password)
     {
+        if (BlockedByOfflineMode("sign-in", true))
+            return;
+
         if (isBusy)
             return;
 
@@ -160,6 +186,9 @@ public class LoginManager : MonoBehaviour
 
     public void UpgradeGuestAccount(string email, string username, string password)
     {
+        if (BlockedByOfflineMode("guest upgrade", true))
+            return;
+
         if (currentSession == null || string.IsNullOrEmpty(currentSession.AuthToken))
         {
             EmitError("Guest session missing. Please relaunch the game.");
@@ -205,12 +234,23 @@ public class LoginManager : MonoBehaviour
             playerDataRoutine = null;
         }
 
+        if (offlineMode)
+        {
+            InitializeOfflineSession();
+            SessionChanged?.Invoke(currentSession);
+            onGuestLoginCompleted?.Invoke();
+            return;
+        }
+
         if (autoGuestLogin && isActiveAndEnabled)
             StartCoroutine(BootstrapGuestSession());
     }
 
     private void LoginWithOAuth(AuthProvider provider, string token)
     {
+        if (BlockedByOfflineMode($"{provider} OAuth login", true))
+            return;
+
         if (isBusy)
             return;
 
@@ -230,6 +270,9 @@ public class LoginManager : MonoBehaviour
 
     private IEnumerator BootstrapGuestSession()
     {
+        if (BlockedByOfflineMode("guest session bootstrap"))
+            yield break;
+
         EmitFlowDiagnostic("Bootstrapping guest session.");
         var request = new GuestAuthRequest
         {
@@ -291,6 +334,7 @@ public class LoginManager : MonoBehaviour
         if (error == null)
             return;
 
+        Debug.LogError($"[LoginManager] Login failed ({error.StatusCode}). Message: {error.Message}\nRaw: {error.RawBody}");
         EmitFlowDiagnostic($"Login error ({error.StatusCode}): {error.Message}");
         if (error.StatusCode == 404 || error.StatusCode == 401)
         {
@@ -308,6 +352,7 @@ public class LoginManager : MonoBehaviour
         if (error == null)
             return;
 
+        Debug.LogError($"[LoginManager] Backend error ({error.StatusCode}). Message: {error.Message}\nRaw: {error.RawBody}");
         EmitFlowDiagnostic($"Backend error ({error?.StatusCode}): {error?.Message}");
         EmitError(string.IsNullOrEmpty(error.Message) ? "Unexpected server error." : error.Message, error);
     }
@@ -336,7 +381,6 @@ public class LoginManager : MonoBehaviour
         if (string.IsNullOrEmpty(message))
             return;
 
-        Debug.Log($"LoginManager: {message}");
         AuthFlowDiagnostic?.Invoke(message);
     }
 
@@ -402,6 +446,9 @@ public class LoginManager : MonoBehaviour
         if (usage == null || !usage.HasUsage)
             return;
 
+        if (BlockedByOfflineMode("powerup usage sync"))
+            return;
+
         if (!HasAuthenticatedUser)
             return;
 
@@ -412,6 +459,20 @@ public class LoginManager : MonoBehaviour
             return;
 
         StartCoroutine(SendPowerupUsageCoroutine(new PowerUpUsageSnapshot(usage)));
+    }
+
+    private bool BlockedByOfflineMode(string actionDescription, bool notifyUser = false)
+    {
+        if (!offlineMode)
+            return false;
+
+        if (!string.IsNullOrEmpty(actionDescription))
+            EmitFlowDiagnostic($"Skipped {actionDescription} because offline mode is active.");
+
+        if (notifyUser)
+            EmitError("Online features are disabled in this offline build.");
+
+        return true;
     }
 
     private bool CanStartNewLogin(string description)
@@ -432,6 +493,9 @@ public class LoginManager : MonoBehaviour
         if (!isActiveAndEnabled)
             return;
 
+        if (BlockedByOfflineMode("player data refresh"))
+            return;
+
         if (currentSession == null || string.IsNullOrEmpty(currentSession.UserId) || string.IsNullOrEmpty(currentSession.AuthToken))
             return;
 
@@ -448,6 +512,12 @@ public class LoginManager : MonoBehaviour
 
     private IEnumerator FetchPlayerDataCoroutine(string userId, string authToken)
     {
+        if (BlockedByOfflineMode("player data fetch"))
+        {
+            playerDataRoutine = null;
+            yield break;
+        }
+
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(authToken))
         {
             playerDataRoutine = null;
@@ -493,6 +563,9 @@ public class LoginManager : MonoBehaviour
 
     private IEnumerator SendPowerupUsageCoroutine(PowerUpUsageSnapshot usage)
     {
+        if (BlockedByOfflineMode("powerup usage sync"))
+            yield break;
+
         if (!IsSessionStillActive(currentSession?.UserId))
             yield break;
 
@@ -552,6 +625,29 @@ public class LoginManager : MonoBehaviour
 
         var go = new GameObject("PlayerDataController");
         go.AddComponent<PlayerDataController>();
+    }
+
+    private void InitializeOfflineSession()
+    {
+        EmitFlowDiagnostic("Offline mode enabled. Backend calls will be skipped.");
+        var offlineUserId = ResolveOfflineUserId();
+        currentSession = new AuthSession(offlineUserId, string.Empty, "Guest", AuthProvider.GUEST);
+    }
+
+    private string ResolveOfflineUserId()
+    {
+        var offlineUserId = PlayerPrefs.GetString(OfflineUserKey, string.Empty);
+        if (!string.IsNullOrEmpty(offlineUserId))
+            return offlineUserId;
+
+        var deviceId = SystemInfo.deviceUniqueIdentifier;
+        if (string.IsNullOrEmpty(deviceId))
+            deviceId = Guid.NewGuid().ToString("N");
+
+        offlineUserId = $"offline-{deviceId}";
+        PlayerPrefs.SetString(OfflineUserKey, offlineUserId);
+        PlayerPrefs.Save();
+        return offlineUserId;
     }
 
     private void UpdateLoginUiState(bool hasAuthenticatedUser)

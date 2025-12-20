@@ -17,6 +17,8 @@ public class GameOverHandler : MonoBehaviour
     [SerializeField] private float collectAnimationDuration = 0.4f;
 
     public int moves;
+    private int startingMoves;
+    private int extraMovesGranted;
     private int targetBlockCount;
     public int targetBlockType;
     private int currentTarget;
@@ -41,13 +43,14 @@ public class GameOverHandler : MonoBehaviour
     public void AssignTarget()
     {
         pendingWin = false;
-        collectedBlocks.Clear();
-        blastedBlocks.Clear(); 
+         
         targetBlockType = Random.Range(0, blockIcons.Length);
         targetBlockCount = Random.Range(50, 80);
         currentTarget = targetBlockCount;
-        //moves = Random.Range(40, 55);
-       moves = 2;
+        moves = Random.Range(40, 55);
+        startingMoves = moves;
+        extraMovesGranted = 0;
+       //moves = 2;
         UpdateUI();
     }
 
@@ -93,9 +96,25 @@ public class GameOverHandler : MonoBehaviour
         }
     }
 
+    public int StartingMoves => startingMoves;
+
+    public int TotalMovesGranted => startingMoves + extraMovesGranted;
+
+    public int MovesUsed => Mathf.Max(0, TotalMovesGranted - moves);
+
     public void DecreaseMove(int aAmount=1)
     {
         moves--;
+        UpdateUI();
+    }
+
+    public void AddMoves(int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        moves += amount;
+        extraMovesGranted += amount;
         UpdateUI();
     }
 
@@ -110,8 +129,7 @@ public class GameOverHandler : MonoBehaviour
     }
     public void IncreaseMoves()
     {
-        moves += 5;
-        UpdateUI();
+        AddMoves(5);
     }
 
     private void PlayTargetCollectAnimation(Block block)

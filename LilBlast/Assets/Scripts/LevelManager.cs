@@ -42,6 +42,7 @@ public class LevelManager : MonoBehaviour
             Failures = 0,
             Stars = 0,
             MovesLeft = 0,
+            MovesUsed = 0,
             PowerUpsUsed = 0,
             CompletionTime = 0,
             CompletedAt = DateTime.MinValue
@@ -56,8 +57,6 @@ public class LevelManager : MonoBehaviour
         currentLevelProgress.Attempts++;
         currentLevelProgress.Failures++;
 
-        Debug.Log($"Level {currentLevelProgress.LevelNumber} failed. Attempts: {currentLevelProgress.Attempts}, Failures: {currentLevelProgress.Failures}");
-
         // Local olarak kaydetmek istersen PlayerPrefs veya Json
         string key = $"Level_{currentLevelProgress.LevelNumber}_Progress";
         PlayerPrefs.SetInt(key + "_Attempts", currentLevelProgress.Attempts);
@@ -70,20 +69,29 @@ public class LevelManager : MonoBehaviour
         if (currentLevelProgress == null) return;
 
         currentLevelProgress.Attempts++;
-        currentLevelProgress.Stars = WinManager.Instance.CalculateStarCount(score);
         currentLevelProgress.MovesLeft = movesLeft;
+        var handler = GameOverHandler.Instance;
+        int totalMovesBudget = handler != null
+            ? handler.TotalMovesGranted
+            : Mathf.Max(movesLeft, DifficultyManager.Instance?.CurrentSettings.moves ?? movesLeft);
+        int movesUsed = handler != null
+            ? handler.MovesUsed
+            : Mathf.Max(0, totalMovesBudget - movesLeft);
+        currentLevelProgress.MovesUsed = movesUsed;
         currentLevelProgress.PowerUpsUsed = powerUpsUsed;
                 
         TimeSpan duration = DateTime.UtcNow - levelStartTime;
-        currentLevelProgress.CompletionTime = (int)duration.TotalMinutes;
+        currentLevelProgress.CompletionTime = Mathf.RoundToInt((float)duration.TotalSeconds);
         currentLevelProgress.CompletedAt = DateTime.UtcNow;
+        float moveUsagePercent = totalMovesBudget <= 0 ? 1f : (float)movesUsed / totalMovesBudget;
+        float completionMinutes = currentLevelProgress.CompletionTime / 60f;
+        currentLevelProgress.Stars = WinManager.Instance.CalculateStarCount(score, moveUsagePercent, completionMinutes);
 
-        Debug.Log($"Level {currentLevelProgress.LevelNumber} completed with {currentLevelProgress.Stars} stars.");
-        Debug.Log($"Attempts {currentLevelProgress.Attempts}, Moves Left: {currentLevelProgress.MovesLeft}, Power-Ups Used: {currentLevelProgress.PowerUpsUsed}, Completion Time: {currentLevelProgress.CompletionTime}s");
    
 
         SaveLevelProgressToLocal(currentLevelProgress.LevelNumber);
         PlayerDataController.Instance?.RecordLevelCompletion(currentLevelProgress, score, usageSnapshot);
+        DifficultyManager.Instance?.ReportLevelSuccess(currentLevelProgress);
 
     }
 
@@ -97,8 +105,6 @@ public class LevelManager : MonoBehaviour
     private void HandleSceneLoaded(Scene scene, bool isGameplayScene)
     {
         int buildIndex = scene.buildIndex;
-        Debug.Log($"Scene loaded: {scene.name} (Index: {buildIndex})");
-
         if (isGameplayScene)
         {
             gridManager = FindObjectOfType<GridManager>();
@@ -120,6 +126,8 @@ public class LevelManager : MonoBehaviour
     {
         SceneManager.LoadScene(levelIndex);
     }
+
+    public LevelProgress CurrentLevelProgress => currentLevelProgress;
     
     // En son tamamlanan seviyeyi kaydeder
     public static void SaveLevelProgressToLocal(int levelIndex)
@@ -155,5 +163,6 @@ public class LevelProgress
     public int Attempts;
     public int Failures;
     public int MovesLeft;
+    public int MovesUsed;
     public int PowerUpsUsed;
 }

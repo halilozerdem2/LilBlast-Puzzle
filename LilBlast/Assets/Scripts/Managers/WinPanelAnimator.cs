@@ -29,7 +29,17 @@ public class WinPanelAnimator : MonoBehaviour
 
         // Skor ve yıldız sayısını al
         int score = ScoreManager.Instance.currentScore;
-        int starCount = WinManager.Instance.CalculateStarCount(score);
+        float moveUsagePercent = 1f;
+        var handler = GameOverHandler.Instance;
+        if (handler != null && handler.TotalMovesGranted > 0)
+            moveUsagePercent = Mathf.Clamp01((float)handler.MovesUsed / handler.TotalMovesGranted);
+
+        float completionMinutes = 0f;
+        var levelManager = LevelManager.Instance;
+        if (levelManager != null && levelManager.CurrentLevelProgress != null)
+            completionMinutes = levelManager.CurrentLevelProgress.CompletionTime / 60f;
+
+        int starCount = WinManager.Instance.CalculateStarCount(score, moveUsagePercent, completionMinutes);
 
         // Panel animasyonu başlat
         scoreText.text = score.ToString();

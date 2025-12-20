@@ -80,7 +80,6 @@ public class PowerUpManager : MonoBehaviour
 
         modifyCount--;
         usedModify++;
-        Debug.Log("Modify kullanıldı. Kalan: " + modifyCount);
         // Buraya senin modify algoritmanı çağır
         RegisterImmediateUsage(0, 0, 1, 0);
         UpdateButtons();
@@ -109,7 +108,6 @@ public class PowerUpManager : MonoBehaviour
     {
         ResetUsageCounters();
         initialPowerUpCount = shuffleCount + powerShuffleCount + modifyCount + destroyCount;
-        Debug.Log("Total Power-Ups after scene load: " + initialPowerUpCount);
     }
      public int CalculateSpentPowerUpAmount()
     {

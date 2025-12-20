@@ -48,8 +48,16 @@ public class LilManager : MonoBehaviour
 
             if (countdown >= manipulationTime)
             {
-                // Süre doldu, manipülasyon başlat
-                StartCoroutine(DoManipulation());
+                if (ShouldLilIntervene())
+                {
+                    // Süre doldu, manipülasyon başlat
+                    StartCoroutine(DoManipulation());
+                }
+                else
+                {
+                    // Bu turda Lil devreye girmiyor, süreyi sıfırla
+                    ResetTimer();
+                }
             }
         }
     }
@@ -67,6 +75,15 @@ public class LilManager : MonoBehaviour
     {
         countdown = 0f;
         manipulationTime = Random.Range(minManipulationTime, maxManipulationTime);
+    }
+
+    private bool ShouldLilIntervene()
+    {
+        var difficultyManager = DifficultyManager.Instance;
+        float involvementChance = difficultyManager != null
+            ? Mathf.Clamp01(difficultyManager.CurrentSettings.lilInvolvingPercentage)
+            : 0.5f;
+        return Random.value <= involvementChance;
     }
 
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -128,34 +145,29 @@ public class LilManager : MonoBehaviour
     {
         AudioManager.Instance.PlayLilVoice(0);
         GameOverHandler.Instance.DecreaseMove(amount);
-        Debug.Log($"Lil oyuncunun {amount} hamlesini azalttı!");
     }
 
     public void BlockRandomTiles(int count = 3)
     {
         AudioManager.Instance.PlayLilVoice(1);
-        Debug.Log($"Lil tahtada {count} rastgele bloğu engelledi!");
         // BlockManager.Instance.BlockTiles(count); // 👈 gerçek logic buraya
     }
 
     public void DisablePowerUps(int duration = 3)
     {
         AudioManager.Instance.PlayLilVoice(2);
-        Debug.Log($"Lil power-up kullanımını {duration} hamle boyunca engelledi!");
         // PowerUpManager.Instance.Disable(duration); // 👈 gerçek logic buraya
     }
 
     public void TransformTargetBlocks()
     {
         AudioManager.Instance.PlayLilVoice(3);
-        Debug.Log("Lil tüm hedef blokları farklı renklere dönüştürdü!");
         // Handler / BlockManager üzerinden hedef bloklara müdahale edebilirsin
     }
 
     public void DestroySpecialBlocks(int count = 2)
     {
         AudioManager.Instance.PlayLilVoice(4);
-        Debug.Log($"Lil {count} özel bloğu yok etti!");
         // BlockManager.Instance.DestroySpecial(count); // 👈 gerçek logic buraya
     }
 
