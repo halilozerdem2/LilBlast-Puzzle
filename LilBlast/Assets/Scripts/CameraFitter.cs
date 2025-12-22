@@ -43,7 +43,7 @@ public class CameraFitter : MonoBehaviour
         float worldTop = mainCamera.orthographicSize - (worldScreenHeight * topMarginPercent);
 
         // 🟩 7) Grid’in world pozisyonunu alt kenar offset’ine göre ayarla
-        float gridWorldY = worldBottom + (safeAreaWorldHeight / 2f);
+        float gridWorldY = Mathf.Lerp(worldBottom, worldTop, 0.65f);
 
         gridParent.position = new Vector3(0f, gridWorldY, 0f) - gridCenter * finalScale;
         gridParent.localScale = new Vector3(finalScale, finalScale, 1f);

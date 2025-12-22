@@ -17,11 +17,18 @@ public class ShuffleManager : MonoBehaviour
     public void HandleShuffle(bool isOrdered=false)
     {
         Instance.ChangeState(GameState.Shuffling);
+        GridManager.freeNodes.Clear();
         foreach (var node in GridManager.Instance._nodes.Values)
         {
-            
-            GridManager.freeNodes.Add(node);
+            if (node == null)
+                continue;
+
             node.OccupiedBlock = null;
+
+            if (node.HasBlocker)
+                continue;
+
+            GridManager.freeNodes.Add(node);
         }
 
         if (availableNodes == null)

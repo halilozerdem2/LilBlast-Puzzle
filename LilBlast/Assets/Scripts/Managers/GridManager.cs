@@ -20,6 +20,8 @@ public class GridManager : MonoBehaviour
     [SerializeField] private SpriteRenderer _boardPrefab;
     [SerializeField] private Node _nodePrefab;
     [SerializeField] private GridList _gridParent; 
+    [SerializeField] private NodeBlocker bottomRowBlockerPrefab;
+    [SerializeField] [Min(0)] private int initialBlockedRowCount = 1;
 
     public Dictionary<Vector2Int, Node> _nodes;
     public static List<Node> freeNodes;
@@ -77,7 +79,7 @@ public class GridManager : MonoBehaviour
             freeNodes.Add(node);
             _nodes.Add(node.gridPosition, node);
         }
-        
+        EnsureBottomRowBlockers(initialBlockedRowCount);
     }
     public List<Node> GenerateGrid()
     {
@@ -100,6 +102,7 @@ public class GridManager : MonoBehaviour
         board.transform.SetParent(gridGameObject.transform);
         board.transform.localScale = new Vector3(_width+0.25f, _height+0.25f, 1);
         cameraFitter.FitCameraToGrid(_width, _height, gridGameObject.transform);
+        EnsureBottomRowBlockers(initialBlockedRowCount);
         return freeNodes;
     }
 
@@ -120,10 +123,17 @@ public class GridManager : MonoBehaviour
             {
                 Node currentNode = _nodes[new Vector2Int(x, y)];
 
+                if (currentNode.HasBlocker)
+                {
+                    emptyY = -1;
+                    continue;
+                }
+
                 if (currentNode.OccupiedBlock == null)
                 {
                     if (emptyY == -1) emptyY = y; // İlk boş hücreyi bul
-                    freeNodes.Add(currentNode); // Boş hücreyi freeNodes listesine ekle
+                    if (!currentNode.HasBlocker)
+                        freeNodes.Add(currentNode); // Boş hücreyi freeNodes listesine ekle
                     continue;
                 }
 
@@ -137,14 +147,16 @@ public class GridManager : MonoBehaviour
                     if (originNode != null)
                     {
                         originNode.OccupiedBlock = null;
-                        freeNodes.Add(originNode);
+                        if (!originNode.HasBlocker)
+                            freeNodes.Add(originNode);
                     }
 
                     // Eski boş hücre listesine ekle
                     // (origin node already added above)
 
                     // Blok yeni yerine taşındı, bu hücre artık boş değil
-                    freeNodes.Remove(emptyNode);
+                    if (!emptyNode.HasBlocker)
+                        freeNodes.Remove(emptyNode);
 
                     blockToMove.SetBlock(emptyNode);
                     pendingFallAnimations++;
@@ -228,5 +240,28 @@ public class GridManager : MonoBehaviour
     }
 
 
+    private void EnsureBottomRowBlockers(int requestedRowCount)
+    {
+        if (bottomRowBlockerPrefab == null || _nodes == null || _nodes.Count == 0)
+            return;
 
+        int maxRowsAllowed = Mathf.Min(_height, Mathf.Max(0, _width - 1));
+        int rowsToBlock = Mathf.Clamp(requestedRowCount, 0, maxRowsAllowed);
+        if (rowsToBlock <= 0)
+            return;
+
+        foreach (var node in _nodes.Values)
+        {
+            if (node == null)
+                continue;
+
+            int rowIndex = node.gridPosition.y;
+            if (rowIndex >= rowsToBlock || node.HasBlocker)
+                continue;
+
+            var blocker = Instantiate(bottomRowBlockerPrefab, node.transform);
+            blocker.transform.localPosition = Vector3.zero;
+            blocker.transform.localRotation = Quaternion.identity;
+        }
+    }
 }

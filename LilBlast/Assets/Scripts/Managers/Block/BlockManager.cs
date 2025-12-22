@@ -103,7 +103,7 @@ public class BlockManager : MonoBehaviour
         var seenNodes = new HashSet<Node>();
         foreach (var node in GridManager.freeNodes)
         {
-            if (node == null || node.OccupiedBlock != null)
+            if (node == null || node.OccupiedBlock != null || node.HasBlocker)
                 continue;
 
             if (seenNodes.Add(node))
@@ -210,6 +210,7 @@ public class BlockManager : MonoBehaviour
                     }
                 }
                 handler.DecreaseMove();
+                TriggerHapticFeedback();
                 handler.UpdateTarget(block, group.Count);
                 GameManager.Instance.ChangeState(GameState.Blasting);
                 if (block.gameObject.activeInHierarchy)
@@ -240,6 +241,7 @@ public class BlockManager : MonoBehaviour
         else
         {
             handler.DecreaseMove();
+            TriggerHapticFeedback();
             GameManager.Instance.ChangeState(GameState.Blasting);
             if (block.gameObject.activeInHierarchy)
                 block.ForceShake(0.3f, 0.1f);
@@ -321,6 +323,7 @@ public class BlockManager : MonoBehaviour
 
             specialBlock.isBeingDestroyed = true;
             var blockGroup = specialBlock.DetermineGroup();
+            NodeBlocker.HandleSpecialBlastArea(specialBlock);
 
             var regularsToBlast = new HashSet<Block>();
 
@@ -387,7 +390,8 @@ public class BlockManager : MonoBehaviour
         var blastPosition = currentNode != null ? (Vector3)currentNode.Pos : b.transform.position;
         if (currentNode != null)
         {
-            GridManager.freeNodes.Add(currentNode);
+            if (!currentNode.HasBlocker)
+                GridManager.freeNodes.Add(currentNode);
             currentNode.OccupiedBlock = null;
         }
         blastedBlocks.Add(b);
@@ -653,6 +657,13 @@ public class BlockManager : MonoBehaviour
         }
 
         BlastBlock(block);
+    }
+
+    private void TriggerHapticFeedback()
+    {
+#if UNITY_ANDROID || UNITY_IOS
+        Handheld.Vibrate();
+#endif
     }
 
     private List<Block> CollectSpecialBlocks(GridManager grid)

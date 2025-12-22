@@ -34,8 +34,8 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        Application.targetFrameRate = -1;
-        QualitySettings.vSyncCount = 1;
+        Application.targetFrameRate = 60;
+        QualitySettings.vSyncCount = 0;
 
 
         Instance = this;
