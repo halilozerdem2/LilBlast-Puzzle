@@ -109,6 +109,45 @@ namespace LilBlast.Backend
     }
 
     [Serializable]
+    public class LevelAttemptRequest
+    {
+        public string userId;
+        public int levelNumber;
+        public int difficulty;
+    }
+
+    [Serializable]
+    public class LevelCompleteRequest
+    {
+        public string userId;
+        public int levelNumber;
+        public int difficulty;
+        public int stars;
+        public int usedPowerups;
+        public long score;
+    }
+
+    [Serializable]
+    public class LevelCompleteResponse
+    {
+        public long newTotalScore;
+        public ProfileResponse updatedProfile;
+    }
+
+    [Serializable]
+    public class LevelProgressEntryResponse
+    {
+        public string id;
+        public int levelNumber;
+        public int attempts;
+        public int wins;
+        public int highestStarsAchieved;
+        public string lastPlayedAt;
+        public int totalPowerupsUsedInThisLevel;
+        public int difficulty;
+    }
+
+    [Serializable]
     internal class ErrorResponse
     {
         public string message;
@@ -199,6 +238,56 @@ namespace LilBlast.Backend
             }
 
             yield return Get($"/profile/{userId}", onSuccess, onError, authToken);
+        }
+
+        public IEnumerator GetLevelProgress(string userId, string authToken, Action<LevelProgressEntryResponse[]> onSuccess, Action<BackendError> onError)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                onError?.Invoke(new BackendError(400, "Missing userId", string.Empty));
+                yield break;
+            }
+
+            var encoded = UnityWebRequest.EscapeURL(userId);
+            var url = BuildUrl($"/levels/progress?userId={encoded}");
+
+            using (var request = UnityWebRequest.Get(url))
+            {
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.SetRequestHeader("Content-Type", "application/json");
+                if (!string.IsNullOrEmpty(authToken))
+                    request.SetRequestHeader("Authorization", $"Bearer {authToken}");
+
+                yield return request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    var error = BuildError(request);
+                    onError?.Invoke(error);
+                    yield break;
+                }
+
+                try
+                {
+                    var array = JsonArrayHelper.FromJson<LevelProgressEntryResponse>(request.downloadHandler.text);
+                    onSuccess?.Invoke(array);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Failed to parse backend response: {ex.Message}\\n{request.downloadHandler.text}");
+                    onError?.Invoke(new BackendError(request.responseCode, "Invalid server response", request.downloadHandler.text));
+                }
+            }
+        }
+
+        public IEnumerator ReportLevelAttempt(LevelAttemptRequest payload, string authToken, Action<SuccessResponse> onSuccess, Action<BackendError> onError)
+        {
+            yield return Post("/levels/attempt", payload, onSuccess, onError, authToken);
+        }
+
+        public IEnumerator ReportLevelCompletion(LevelCompleteRequest payload, string authToken, Action<LevelCompleteResponse> onSuccess, Action<BackendError> onError)
+        {
+            yield return Post("/levels/complete", payload, onSuccess, onError, authToken);
         }
 
         private IEnumerator Post<TPayload, TResponse>(string route, TPayload payload, Action<TResponse> onSuccess, Action<BackendError> onError, string authToken = null)
@@ -313,6 +402,25 @@ namespace LilBlast.Backend
             }
 
             return new BackendError(request.responseCode, message, raw);
+        }
+    }
+
+    internal static class JsonArrayHelper
+    {
+        [Serializable]
+        private class Wrapper<T>
+        {
+            public T[] items;
+        }
+
+        public static T[] FromJson<T>(string json)
+        {
+            if (string.IsNullOrEmpty(json))
+                return Array.Empty<T>();
+
+            var wrapped = $"{{\"items\":{json}}}";
+            var wrapper = JsonUtility.FromJson<Wrapper<T>>(wrapped);
+            return wrapper?.items ?? Array.Empty<T>();
         }
     }
 }

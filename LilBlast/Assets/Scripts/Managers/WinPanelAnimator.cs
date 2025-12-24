@@ -39,7 +39,11 @@ public class WinPanelAnimator : MonoBehaviour
         if (levelManager != null && levelManager.CurrentLevelProgress != null)
             completionMinutes = levelManager.CurrentLevelProgress.CompletionTime / 60f;
 
-        int starCount = WinManager.Instance.CalculateStarCount(score, moveUsagePercent, completionMinutes);
+        int starCount = 0;
+        if (levelManager != null && levelManager.CurrentLevelProgress != null)
+            starCount = levelManager.CurrentLevelProgress.Stars;
+        else
+            starCount = WinManager.Instance.CalculateStarCount(score, moveUsagePercent, completionMinutes);
 
         // Panel animasyonu başlat
         scoreText.text = score.ToString();

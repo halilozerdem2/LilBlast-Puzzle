@@ -53,7 +53,7 @@ public class GameManager : MonoBehaviour
     {
         RefreshSceneBoundReferences();
         ChangeState(GameState.Menu);
-        if(LevelManager.GetLastCompletedLevel()>=4)
+        if(LevelManager.GetLastCompletedLevel() >= LevelManager.LastGameplayLevelBuildIndex)
             LevelManager.ResetProgress();
         
     }

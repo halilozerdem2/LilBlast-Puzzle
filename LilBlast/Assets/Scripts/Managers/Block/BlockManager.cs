@@ -116,9 +116,10 @@ public class BlockManager : MonoBehaviour
         List<Node> nodesToFill = dedupedNodes;
         int counter = 0, spawnIndex;
         int targetBlockType = handler.targetBlockType;
+        var difficultyManager = DifficultyManager.Instance;
         float difficultySpawnChance = Mathf.Clamp01(
-            DifficultyManager.Instance != null
-                ? DifficultyManager.Instance.CurrentSettings.blockSpawnAccuracyPercentage
+            difficultyManager != null
+                ? difficultyManager.CurrentConfig.spawnAccuracy
                 : 0.15f);
 
         foreach (var node in nodesToFill)

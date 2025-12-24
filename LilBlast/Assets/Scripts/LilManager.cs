@@ -81,7 +81,7 @@ public class LilManager : MonoBehaviour
     {
         var difficultyManager = DifficultyManager.Instance;
         float involvementChance = difficultyManager != null
-            ? Mathf.Clamp01(difficultyManager.CurrentSettings.lilInvolvingPercentage)
+            ? Mathf.Clamp01(1f - difficultyManager.CurrentConfig.spawnAccuracy)
             : 0.5f;
         return Random.value <= involvementChance;
     }

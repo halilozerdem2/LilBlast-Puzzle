@@ -29,28 +29,28 @@ public class MenuCanvasManager : MonoBehaviour
         if (lowerPanelButtonHandler != null && lowerPanelButtonHandler.activeButton.name != "Play Button")
             return;
 
-        var nextLevelIndex = LevelManager.GetLastCompletedLevel() + 1;
-        SceneManager.LoadScene(nextLevelIndex);
+        var nextLevelIndex = ResolveNextLevelIndex();
+        levelManager.LoadLevel(nextLevelIndex, nextLevelIndex);
         DeactivateAllPanels();
     }
 
     public void PlayAgain()
     {
-        var currentLevel = LevelManager.GetLastCompletedLevel();
-        SceneManager.LoadScene(currentLevel);
+        var currentLevel = Mathf.Max(LevelManager.GetLastCompletedLevel(), LevelManager.FirstGameplayLevelBuildIndex);
+        levelManager.LoadLevel(currentLevel, currentLevel);
         DeactivateAllPanels();
     }
 
     public void NextLevel()
     {
-        var nextLevelIndex = LevelManager.GetLastCompletedLevel() + 1;
-        SceneManager.LoadScene(nextLevelIndex);
+        var nextLevelIndex = ResolveNextLevelIndex();
+        levelManager.LoadLevel(nextLevelIndex, nextLevelIndex);
         DeactivateAllPanels();
     }
 
     public void LoadLevel(int index)
     {
-        levelManager.LoadLevel(index);
+        levelManager.LoadLevel(index, index);
         DeactivateAllPanels();
     }
 
@@ -88,5 +88,18 @@ public class MenuCanvasManager : MonoBehaviour
     {
         if (panel != null)
             panel.SetActive(false);
+    }
+
+    private int ResolveNextLevelIndex()
+    {
+        int lastCompleted = LevelManager.GetLastCompletedLevel();
+        int nextIndex = lastCompleted + 1;
+        if (nextIndex > LevelManager.LastGameplayLevelBuildIndex)
+        {
+            LevelManager.ResetProgress();
+            nextIndex = LevelManager.FirstGameplayLevelBuildIndex;
+        }
+
+        return Mathf.Clamp(nextIndex, LevelManager.FirstGameplayLevelBuildIndex, LevelManager.LastGameplayLevelBuildIndex);
     }
 }

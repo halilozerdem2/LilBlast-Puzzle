@@ -3,13 +3,16 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Simple helper that reflects the currently logged in username and mirrors inventory/stat snapshots on the UI.
+/// Scene-bound controller that keeps all main-menu UI widgets in sync with backend data and login state.
+/// Attach it in the MainMenu scene and wire the serialized references to the relevant Texts / GameObjects.
 /// </summary>
-public class UIUpdater : MonoBehaviour
+public class MainMenuUIController : MonoBehaviour
 {
+    [Header("Login UI")]
     [SerializeField] private TMP_Text usernameLabel;
-    [SerializeField] private string loggedOutText = "Not logged in";
-    [SerializeField] private PlayerDataController playerDataController;
+    [SerializeField] private GameObject loginPanelRoot;
+    [SerializeField] private GameObject loginButtonLabel;
+    [SerializeField] private string loggedOutText = "Guest";
 
     [Header("Inventory Labels")]
     [SerializeField] private TMP_Text coinsLabel;
@@ -20,8 +23,6 @@ public class UIUpdater : MonoBehaviour
     [SerializeField] private TMP_Text destroyLabel;
 
     [Header("Stats Labels")]
-    [SerializeField] private TMP_Text totalAttemptsLabel;
-    [SerializeField] private TMP_Text totalWinsLabel;
     [SerializeField] private TMP_Text totalScoreLabel;
     [SerializeField] private TMP_Text lastLevelLabel;
     [SerializeField] private TMP_Text threeStarLabel;
@@ -29,14 +30,13 @@ public class UIUpdater : MonoBehaviour
     [SerializeField] private TMP_Text attemptsWinRatioLabel;
 
     private LoginManager loginManager;
+    private PlayerDataController playerDataController;
     private Coroutine controllerWatcher;
 
     private void Awake()
     {
-        if (loginManager == null)
-            loginManager = LoginManager.Instance ?? FindObjectOfType<LoginManager>();
-        if (playerDataController == null)
-            playerDataController = FindObjectOfType<PlayerDataController>();
+        loginManager = LoginManager.Instance ?? FindObjectOfType<LoginManager>();
+        playerDataController = PlayerDataController.Instance ?? FindObjectOfType<PlayerDataController>();
     }
 
     private void OnEnable()
@@ -47,7 +47,7 @@ public class UIUpdater : MonoBehaviour
         if (loginManager != null)
         {
             loginManager.SessionChanged += HandleSessionChanged;
-            UpdateLabel(loginManager.CurrentSession);
+            HandleSessionChanged(loginManager.CurrentSession);
         }
 
         PlayerDataController.InstanceChanged += HandlePlayerDataControllerChanged;
@@ -63,6 +63,7 @@ public class UIUpdater : MonoBehaviour
 
         PlayerDataController.InstanceChanged -= HandlePlayerDataControllerChanged;
         DetachPlayerDataController();
+
         if (controllerWatcher != null)
         {
             StopCoroutine(controllerWatcher);
@@ -72,7 +73,21 @@ public class UIUpdater : MonoBehaviour
 
     private void HandleSessionChanged(AuthSession session)
     {
-        UpdateLabel(session);
+        if (usernameLabel != null)
+        {
+            if (session == null)
+                usernameLabel.text = loggedOutText;
+            else if (!string.IsNullOrEmpty(session.Username))
+                usernameLabel.text = session.Username;
+            else
+                usernameLabel.text = !string.IsNullOrEmpty(session.UserId) ? session.UserId : loggedOutText;
+        }
+
+        bool hasAuthUser = session != null && !session.IsGuest;
+        if (loginPanelRoot != null && loginPanelRoot.activeSelf != hasAuthUser)
+            loginPanelRoot.SetActive(hasAuthUser);
+        if (loginButtonLabel != null && loginButtonLabel.activeSelf == hasAuthUser)
+            loginButtonLabel.SetActive(!hasAuthUser);
     }
 
     private void HandleInventoryChanged(PlayerInventoryState inventory)
@@ -87,65 +102,11 @@ public class UIUpdater : MonoBehaviour
 
     private void HandleStatsChanged(PlayerStatsState stats)
     {
-        SetNumber(totalAttemptsLabel, stats?.TotalAttempts);
-        SetNumber(totalWinsLabel, stats?.TotalWins);
         SetNumber(totalScoreLabel, stats?.TotalScore);
         SetNumber(lastLevelLabel, stats?.LastLevelReached);
         SetNumber(threeStarLabel, stats?.ThreeStarCount);
         SetNumber(totalPowerupsLabel, stats?.TotalPowerupsUsed);
         SetRatio(attemptsWinRatioLabel, stats?.TotalWins, stats?.TotalAttempts);
-    }
-
-    private void UpdateLabel(AuthSession session)
-    {
-        if (usernameLabel == null)
-        {
-            Debug.LogWarning("UIUpdater: Username label reference missing.");
-            return;
-        }
-
-        if (session == null)
-        {
-            usernameLabel.text = loggedOutText;
-            return;
-        }
-
-        var displayName = !string.IsNullOrEmpty(session.Username)
-            ? session.Username
-            : (!string.IsNullOrEmpty(session.UserId) ? session.UserId : loggedOutText);
-
-        usernameLabel.text = displayName;
-    }
-
-    private void SetNumber(TMP_Text label, long? value)
-    {
-        if (label == null)
-             return;
-
-        label.text = value.HasValue ? value.Value.ToString() : "0";
-    }
-
-    private void SetNumber(TMP_Text label, int? value)
-    {
-        if (label == null)
-            return;
-
-        label.text = value.HasValue ? value.Value.ToString() : "0";
-    }
-
-    private void SetRatio(TMP_Text label, long? wins, long? attempts)
-    {
-        if (label == null)
-            return;
-
-        if (!wins.HasValue || !attempts.HasValue || attempts.Value <= 0)
-        {
-            label.text = "0%";
-            return;
-        }
-
-        float ratio = Mathf.Clamp01((float)wins.Value / Mathf.Max(1f, attempts.Value));
-        label.text = $"{ratio * 100f:0.#}%";
     }
 
     private void AttachPlayerDataController(PlayerDataController controller)
@@ -181,13 +142,55 @@ public class UIUpdater : MonoBehaviour
                 AttachPlayerDataController(instance);
                 break;
             }
+
             yield return null;
         }
+
         controllerWatcher = null;
     }
 
     private void HandlePlayerDataControllerChanged(PlayerDataController controller)
     {
         AttachPlayerDataController(controller);
+        if (controller != null && controllerWatcher != null)
+        {
+            StopCoroutine(controllerWatcher);
+            controllerWatcher = null;
+        }
+        else if (controller == null && controllerWatcher == null)
+        {
+            controllerWatcher = StartCoroutine(WaitForPlayerDataController());
+        }
+    }
+
+    private void SetNumber(TMP_Text label, long? value)
+    {
+        if (label == null)
+            return;
+
+        label.text = value.HasValue ? value.Value.ToString() : "0";
+    }
+
+    private void SetNumber(TMP_Text label, int? value)
+    {
+        if (label == null)
+            return;
+
+        label.text = value.HasValue ? value.Value.ToString() : "0";
+    }
+
+    private void SetRatio(TMP_Text label, long? wins, long? attempts)
+    {
+        if (label == null)
+            return;
+
+        if (!wins.HasValue || !attempts.HasValue || attempts.Value <= 0)
+        {
+            label.text = "0%";
+            return;
+        }
+
+        float ratio = Mathf.Clamp01((float)wins.Value / Mathf.Max(1f, attempts.Value));
+        label.text = $"{ratio * 100f:0.#}%";
     }
 }

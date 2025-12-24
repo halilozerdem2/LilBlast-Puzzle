@@ -9,6 +9,7 @@ using UnityEngine;
 public class PlayerDataController : MonoBehaviour
 {
     public static PlayerDataController Instance { get; private set; }
+    public static event Action<PlayerDataController> InstanceChanged;
 
     [SerializeField] private LoginManager loginManager;
 
@@ -18,9 +19,14 @@ public class PlayerDataController : MonoBehaviour
     public event Action<PlayerInventoryState> InventoryUpdated;
     public event Action<PlayerStatsState> StatsUpdated;
 
+    private const string PlayerDataKeyPrefix = "LilGames.PlayerData.";
+    private const string AuthUserPrefsKey = "LilGames.UserId";
+    private const string OfflineUserPrefsKey = "LilGames.OfflineUserId";
+    private const string GuestStorageKey = "guest";
+
     private PlayerInventoryState inventorySnapshot = new PlayerInventoryState();
     private PlayerStatsState statsSnapshot = new PlayerStatsState();
-    private string currentStorageKey = "guest";
+    private string currentStorageKey = GuestStorageKey;
 
     private void Awake()
     {
@@ -32,6 +38,7 @@ public class PlayerDataController : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        InstanceChanged?.Invoke(this);
         if (loginManager == null)
             loginManager = LoginManager.Instance;
         currentStorageKey = ResolveStorageKey(loginManager?.CurrentSession);
@@ -59,6 +66,15 @@ public class PlayerDataController : MonoBehaviour
         loginManager.SessionChanged -= HandleSessionChanged;
         loginManager.InventoryChanged -= HandleInventoryChanged;
         loginManager.StatsChanged -= HandleStatsChanged;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+            InstanceChanged?.Invoke(null);
+        }
     }
 
     private void Start()
@@ -213,19 +229,51 @@ public class PlayerDataController : MonoBehaviour
         StatsUpdated?.Invoke(new PlayerStatsState(statsSnapshot));
     }
 
+    public static void ResetLocalData()
+    {
+        Instance?.ResetSnapshots();
+
+        ClearStoredDataForKey(GuestStorageKey);
+        var lastAuthUser = PlayerPrefs.GetString(AuthUserPrefsKey, string.Empty);
+        if (!string.IsNullOrEmpty(lastAuthUser))
+            ClearStoredDataForKey(lastAuthUser);
+        var offlineUserId = PlayerPrefs.GetString(OfflineUserPrefsKey, string.Empty);
+        if (!string.IsNullOrEmpty(offlineUserId))
+            ClearStoredDataForKey(offlineUserId);
+
+        PlayerPrefs.Save();
+    }
+
     private string BuildKey(string suffix)
     {
-        return $"LilGames.PlayerData.{currentStorageKey}.{suffix}";
+        return $"{PlayerDataKeyPrefix}{currentStorageKey}.{suffix}";
     }
 
     private string ResolveStorageKey(AuthSession session)
     {
         if (session == null)
-            return "guest";
+            return GuestStorageKey;
 
         if (!string.IsNullOrEmpty(session.UserId))
             return session.UserId;
 
-        return "guest";
+        return GuestStorageKey;
+    }
+
+    private void ResetSnapshots()
+    {
+        inventorySnapshot = new PlayerInventoryState();
+        statsSnapshot = new PlayerStatsState();
+        NotifyInventoryUpdated();
+        NotifyStatsUpdated();
+    }
+
+    private static void ClearStoredDataForKey(string storageKey)
+    {
+        if (string.IsNullOrEmpty(storageKey))
+            return;
+
+        PlayerPrefs.DeleteKey($"{PlayerDataKeyPrefix}{storageKey}.Inventory");
+        PlayerPrefs.DeleteKey($"{PlayerDataKeyPrefix}{storageKey}.Stats");
     }
 }

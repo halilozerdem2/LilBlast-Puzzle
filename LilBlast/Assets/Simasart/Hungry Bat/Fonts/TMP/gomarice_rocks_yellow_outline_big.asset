@@ -11,7 +11,7 @@ Texture2D:
     serializedVersion: 2
     Hash: 00000000000000000000000000000000
   m_IsAlphaChannelOptional: 0
-  serializedVersion: 3
+  serializedVersion: 4
   m_Width: 1024
   m_Height: 1024
   m_CompleteImageSize: 1048576
@@ -79,7 +79,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _FaceTex:
         m_Texture: {fileID: 2800000, guid: f1a71ddbd112aa549b4d0837fcf766ef, type: 3}
-        m_Scale: {x: 0.35, y: 1}
+        m_Scale: {x: -4.15, y: 0.65}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: -5430361431177943873}
@@ -102,7 +102,7 @@ Material:
     - _ColorMask: 15
     - _CullMode: 0
     - _Diffuse: 0.5
-    - _FaceDilate: 0.2
+    - _FaceDilate: -0.08
     - _FaceUVSpeedX: 0
     - _FaceUVSpeedY: 0
     - _GlowInner: 0
@@ -116,12 +116,12 @@ Material:
     - _OutlineSoftness: 0
     - _OutlineUVSpeedX: 0
     - _OutlineUVSpeedY: 0
-    - _OutlineWidth: 0.28
+    - _OutlineWidth: 0.302
     - _PerspectiveFilter: 0.875
     - _Reflectivity: 10
     - _ScaleRatioA: 0.9
-    - _ScaleRatioB: 0.55125
-    - _ScaleRatioC: 0.55125
+    - _ScaleRatioB: 0.80325
+    - _ScaleRatioC: 0.80325
     - _ScaleX: 1
     - _ScaleY: 1
     - _ShaderFlags: 0
@@ -528,6 +528,21 @@ MonoBehaviour:
       m_Y: 303
       m_Width: 15
       m_Height: 52
+    m_Scale: 1
+    m_AtlasIndex: 0
+    m_ClassDefinitionType: 0
+  - m_Index: 33
+    m_Metrics:
+      m_Width: 43.0625
+      m_Height: 70.046875
+      m_HorizontalBearingX: 2.640625
+      m_HorizontalBearingY: 70.140625
+      m_HorizontalAdvance: 48.34375
+    m_GlyphRect:
+      m_X: 397
+      m_Y: 902
+      m_Width: 44
+      m_Height: 71
     m_Scale: 1
     m_AtlasIndex: 0
     m_ClassDefinitionType: 0
@@ -1341,21 +1356,6 @@ MonoBehaviour:
     m_Scale: 1
     m_AtlasIndex: 0
     m_ClassDefinitionType: 0
-  - m_Index: 33
-    m_Metrics:
-      m_Width: 43.0625
-      m_Height: 70.046875
-      m_HorizontalBearingX: 2.640625
-      m_HorizontalBearingY: 70.140625
-      m_HorizontalAdvance: 48.34375
-    m_GlyphRect:
-      m_X: 397
-      m_Y: 902
-      m_Width: 44
-      m_Height: 71
-    m_Scale: 1
-    m_AtlasIndex: 0
-    m_ClassDefinitionType: 0
   m_CharacterTable:
   - m_ElementType: 1
     m_Unicode: 32
@@ -1440,6 +1440,10 @@ MonoBehaviour:
   - m_ElementType: 1
     m_Unicode: 58
     m_GlyphIndex: 28
+    m_Scale: 1
+  - m_ElementType: 1
+    m_Unicode: 63
+    m_GlyphIndex: 33
     m_Scale: 1
   - m_ElementType: 1
     m_Unicode: 64
@@ -1656,10 +1660,6 @@ MonoBehaviour:
   - m_ElementType: 1
     m_Unicode: 8230
     m_GlyphIndex: 214
-    m_Scale: 1
-  - m_ElementType: 1
-    m_Unicode: 63
-    m_GlyphIndex: 33
     m_Scale: 1
   m_AtlasTextures:
   - {fileID: -5430361431177943873}

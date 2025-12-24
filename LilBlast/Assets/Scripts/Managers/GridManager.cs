@@ -45,10 +45,12 @@ public class GridManager : MonoBehaviour
         bool generatedFromDifficulty = false;
         if (difficultyManager != null)
         {
-            var boardSize = difficultyManager.CurrentSettings.boardSize;
-            _width = Mathf.Max(1, boardSize.x);
-            _height = Mathf.Max(1, boardSize.y);
+            var config = difficultyManager.CurrentConfig;
+            var boardSize = config.boardSize;
+            _width = Mathf.Max(5, boardSize.x);
+            _height = Mathf.Max(5, boardSize.y);
             GenerateGrid();
+            ApplyNodeBlockersFromConfig(config);
             generatedFromDifficulty = true;
         }
 
@@ -66,6 +68,8 @@ public class GridManager : MonoBehaviour
             {
                 GenerateGrid();
             }
+
+            EnsureBottomRowBlockers(initialBlockedRowCount);
         }
         BlockManager.Instance.InitializeBlockManager();
         GameManager.Instance.ChangeState(GameState.SpawningBlocks);
@@ -79,7 +83,6 @@ public class GridManager : MonoBehaviour
             freeNodes.Add(node);
             _nodes.Add(node.gridPosition, node);
         }
-        EnsureBottomRowBlockers(initialBlockedRowCount);
     }
     public List<Node> GenerateGrid()
     {
@@ -102,7 +105,6 @@ public class GridManager : MonoBehaviour
         board.transform.SetParent(gridGameObject.transform);
         board.transform.localScale = new Vector3(_width+0.25f, _height+0.25f, 1);
         cameraFitter.FitCameraToGrid(_width, _height, gridGameObject.transform);
-        EnsureBottomRowBlockers(initialBlockedRowCount);
         return freeNodes;
     }
 
@@ -237,6 +239,125 @@ public class GridManager : MonoBehaviour
         pendingFallAnimations = Mathf.Max(0, pendingFallAnimations - 1);
         if (pendingFallAnimations == 0)
             GameManager.Instance.ChangeState(GameState.SpawningBlocks);
+    }
+
+
+    private void ApplyNodeBlockersFromConfig(DifficultyConfig config)
+    {
+        if (bottomRowBlockerPrefab == null || _nodes == null || _nodes.Count == 0)
+            return;
+
+        if (config.iceCoverage <= 0f || config.iceClusterSize <= 0)
+            return;
+
+        int totalNodes = Mathf.Max(1, _width * _height);
+        int targetBlockers = Mathf.Clamp(Mathf.RoundToInt(totalNodes * Mathf.Clamp01(config.iceCoverage)), 0, totalNodes);
+        if (targetBlockers <= 0)
+            return;
+
+        int cappedRowStart = Mathf.Clamp(Mathf.CeilToInt(_height * Mathf.Clamp01(1f - config.iceStartRowRatio)), 1, _height);
+        if (cappedRowStart <= 0)
+            return;
+
+        var candidateNodes = new List<Node>();
+        foreach (var node in _nodes.Values)
+        {
+            if (node == null)
+                continue;
+
+            if (node.gridPosition.y < cappedRowStart)
+                candidateNodes.Add(node);
+        }
+
+        if (candidateNodes.Count == 0)
+            return;
+
+        targetBlockers = Mathf.Clamp(targetBlockers, 0, candidateNodes.Count);
+        if (targetBlockers <= 0)
+            return;
+
+        var blockedNodes = new HashSet<Node>();
+        var rowCounts = new int[_height];
+        var columnCounts = new int[_width];
+        int clusterSize = Mathf.Max(1, config.iceClusterSize);
+        int safety = candidateNodes.Count * 4;
+
+        while (blockedNodes.Count < targetBlockers && safety-- > 0)
+        {
+            var seed = candidateNodes[UnityEngine.Random.Range(0, candidateNodes.Count)];
+            if (!TrySpawnBlockerAtNode(seed, blockedNodes, rowCounts, columnCounts))
+                continue;
+
+            int remainingClusterSpots = Mathf.Min(clusterSize - 1, targetBlockers - blockedNodes.Count);
+            if (remainingClusterSpots > 0)
+                GrowBlockerCluster(seed, remainingClusterSpots, targetBlockers, cappedRowStart, blockedNodes, rowCounts, columnCounts);
+        }
+    }
+
+    private void GrowBlockerCluster(Node seed, int remainingClusterSpots, int targetBlockers, int cappedRowStart, HashSet<Node> blockedNodes, int[] rowCounts, int[] columnCounts)
+    {
+        if (seed == null || remainingClusterSpots <= 0)
+            return;
+
+        var queue = new Queue<Node>();
+        queue.Enqueue(seed);
+        Vector2Int[] neighborOffsets =
+        {
+            Vector2Int.up,
+            Vector2Int.down,
+            Vector2Int.left,
+            Vector2Int.right
+        };
+
+        while (queue.Count > 0 && remainingClusterSpots > 0 && blockedNodes.Count < targetBlockers)
+        {
+            var current = queue.Dequeue();
+            foreach (var offset in neighborOffsets)
+            {
+                if (remainingClusterSpots <= 0 || blockedNodes.Count >= targetBlockers)
+                    break;
+
+                var neighborPos = current.gridPosition + offset;
+                if (neighborPos.x < 0 || neighborPos.x >= _width)
+                    continue;
+                if (neighborPos.y < 0 || neighborPos.y >= cappedRowStart)
+                    continue;
+
+                if (!_nodes.TryGetValue(neighborPos, out var neighbor) || neighbor == null)
+                    continue;
+
+                if (TrySpawnBlockerAtNode(neighbor, blockedNodes, rowCounts, columnCounts))
+                {
+                    remainingClusterSpots--;
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+    }
+
+    private bool TrySpawnBlockerAtNode(Node node, HashSet<Node> blockedNodes, int[] rowCounts, int[] columnCounts)
+    {
+        if (node == null || node.HasBlocker || blockedNodes.Contains(node))
+            return false;
+
+        int row = node.gridPosition.y;
+        int column = node.gridPosition.x;
+        if (row < 0 || row >= _height || column < 0 || column >= _width)
+            return false;
+
+        if (rowCounts[row] >= _width - 1)
+            return false;
+
+        if (columnCounts[column] >= _height - 1)
+            return false;
+
+        var blocker = Instantiate(bottomRowBlockerPrefab, node.transform);
+        blocker.transform.localPosition = Vector3.zero;
+        blocker.transform.localRotation = Quaternion.identity;
+        blockedNodes.Add(node);
+        rowCounts[row]++;
+        columnCounts[column]++;
+        return true;
     }
 
 

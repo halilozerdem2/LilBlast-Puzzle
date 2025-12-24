@@ -23,6 +23,7 @@ public class LoginManager : MonoBehaviour
     [SerializeField] private string baseApiUrl = "https://api.lilgamelabs.com";
     [SerializeField] private bool autoGuestLogin = true;
     [SerializeField] private bool offlineMode = false;
+    [SerializeField] private bool enableLevelProgressSync = false;
 
     [Header("UI Hooks")]
     [SerializeField] private UnityEvent onGuestLoginCompleted;
@@ -217,6 +218,7 @@ public class LoginManager : MonoBehaviour
     {
         EmitFlowDiagnostic("Clearing session and logging out.");
         currentSession = null;
+        LevelManager.SetActiveProgressUser(null);
         PlayerPrefs.DeleteKey(TokenKey);
         PlayerPrefs.DeleteKey(UserKey);
         PlayerPrefs.DeleteKey(ProviderKey);
@@ -315,6 +317,7 @@ public class LoginManager : MonoBehaviour
             ? response.username
             : response.userId;
         currentSession = new AuthSession(response.userId, response.authToken, resolvedUsername, provider);
+        LevelManager.SetActiveProgressUser(currentSession.UserId);
         SaveSession();
 
         if (provider == AuthProvider.GUEST)
@@ -326,6 +329,7 @@ public class LoginManager : MonoBehaviour
         InventoryChanged?.Invoke(currentSession.Inventory);
         StatsChanged?.Invoke(currentSession.Stats);
         BeginPlayerDataRefresh();
+        SyncLevelProgressFromStats(currentSession.Stats);
         UpdateLoginUiState(!currentSession.IsGuest);
     }
 
@@ -403,6 +407,7 @@ public class LoginManager : MonoBehaviour
         }
 
         currentSession = new AuthSession(userId, token, username, provider);
+        LevelManager.SetActiveProgressUser(currentSession.UserId);
     }
 
     private void SaveSession()
@@ -439,6 +444,7 @@ public class LoginManager : MonoBehaviour
 
         currentSession.SetStats(snapshot);
         StatsChanged?.Invoke(currentSession.Stats);
+        SyncLevelProgressFromStats(snapshot);
     }
 
     public void ReportPowerupUsage(PowerUpUsageSnapshot usage)
@@ -556,7 +562,11 @@ public class LoginManager : MonoBehaviour
                 LastLevelReached = response?.lastLevelReached ?? 0
             };
             UpdateStats(snapshot);
+            SyncLevelProgressFromStats(snapshot);
         }, error => HandleDataFetchError("profile", error));
+
+        if (enableLevelProgressSync)
+            yield return FetchLevelProgressWithRetry(userId, authToken, 2);
 
         playerDataRoutine = null;
     }
@@ -577,6 +587,47 @@ public class LoginManager : MonoBehaviour
         {
             yield return authClient.ConsumeInventory(payload, token, _ => { }, error => HandleDataFetchError("inventory-consume", error));
         }
+    }
+
+    public void ReportLevelAttempt(int levelNumber, int difficulty)
+    {
+        if (!enableLevelProgressSync)
+            return;
+        if (!CanSendLevelTelemetry(levelNumber))
+            return;
+
+        var payload = new LevelAttemptRequest
+        {
+            userId = currentSession.UserId,
+            levelNumber = levelNumber,
+            difficulty = Mathf.Clamp(difficulty, DifficultyConfig.MinDifficulty, DifficultyConfig.MaxDifficulty)
+        };
+
+        StartCoroutine(authClient.ReportLevelAttempt(payload, currentSession.AuthToken, _ => { }, error => HandleDataFetchError("level-attempt", error)));
+    }
+
+    public void ReportLevelCompletion(int levelNumber, int difficulty, int stars, int usedPowerups, long score)
+    {
+        if (!enableLevelProgressSync)
+            return;
+        if (!CanSendLevelTelemetry(levelNumber))
+            return;
+
+        var payload = new LevelCompleteRequest
+        {
+            userId = currentSession.UserId,
+            levelNumber = levelNumber,
+            difficulty = Mathf.Clamp(difficulty, DifficultyConfig.MinDifficulty, DifficultyConfig.MaxDifficulty),
+            stars = Mathf.Clamp(stars, 0, 3),
+            usedPowerups = Mathf.Max(0, usedPowerups),
+            score = Math.Max(0L, score)
+        };
+
+        StartCoroutine(authClient.ReportLevelCompletion(payload, currentSession.AuthToken, response =>
+        {
+            if (response?.updatedProfile != null)
+                ApplyProfileSnapshot(response.updatedProfile);
+        }, error => HandleDataFetchError("level-complete", error)));
     }
 
     private InventoryAdjustmentRequest[] BuildPowerupUsageRequests(string userId, PowerUpUsageSnapshot usage)
@@ -618,6 +669,137 @@ public class LoginManager : MonoBehaviour
         AuthFlowDiagnostic?.Invoke($"Failed to load {domain}: {error.Message}");
     }
 
+    private bool CanSendLevelTelemetry(int levelNumber)
+    {
+        if (levelNumber < LevelManager.FirstGameplayLevelBuildIndex)
+            return false;
+
+        if (!isActiveAndEnabled)
+            return false;
+
+        if (BlockedByOfflineMode("level telemetry"))
+            return false;
+
+        if (authClient == null)
+            return false;
+
+        if (currentSession == null || string.IsNullOrEmpty(currentSession.UserId) || string.IsNullOrEmpty(currentSession.AuthToken))
+            return false;
+
+        return true;
+    }
+
+    private void ApplyProfileSnapshot(ProfileResponse profile)
+    {
+        if (profile == null)
+            return;
+
+        var stats = new PlayerStatsState
+        {
+            TotalAttempts = profile.totalAttempts,
+            TotalWins = profile.totalWins,
+            ThreeStarCount = profile.threeStarCount,
+            TotalPowerupsUsed = profile.totalPowerupsUsed,
+            TotalScore = profile.totalScore,
+            LastLevelReached = profile.lastLevelReached
+        };
+
+        UpdateStats(stats);
+    }
+
+    private void HandleLevelProgressResponse(LevelProgressEntryResponse[] response)
+    {
+        if (response == null)
+        {
+            LevelManager.ClearCachedBackendProgress();
+            return;
+        }
+
+        var list = new List<LevelManager.BackendLevelProgressData>(response.Length);
+        foreach (var entry in response)
+        {
+            if (entry == null)
+                continue;
+
+            list.Add(new LevelManager.BackendLevelProgressData
+            {
+                Id = entry.id,
+                LevelNumber = entry.levelNumber,
+                Attempts = entry.attempts,
+                Wins = entry.wins,
+                HighestStarsAchieved = entry.highestStarsAchieved,
+                LastPlayedAt = entry.lastPlayedAt,
+                TotalPowerupsUsedInThisLevel = entry.totalPowerupsUsedInThisLevel,
+                Difficulty = entry.difficulty
+            });
+        }
+
+        LevelManager.SetBackendProgress(list);
+    }
+
+    private IEnumerator FetchLevelProgressWithRetry(string userId, string authToken, int maxAttempts)
+    {
+        int attempts = 0;
+        while (attempts < Mathf.Max(1, maxAttempts))
+        {
+            bool requestCompleted = false;
+            bool succeeded = false;
+            BackendError capturedError = null;
+            LevelProgressEntryResponse[] payload = null;
+
+            yield return authClient.GetLevelProgress(userId, authToken, response =>
+            {
+                if (!IsSessionStillActive(userId))
+                    return;
+
+                payload = response;
+                succeeded = true;
+                requestCompleted = true;
+            }, error =>
+            {
+                capturedError = error;
+                requestCompleted = true;
+            });
+
+            if (!requestCompleted)
+                yield break;
+
+            if (succeeded)
+            {
+                if (IsSessionStillActive(userId))
+                    HandleLevelProgressResponse(payload);
+                yield break;
+            }
+
+            attempts++;
+            var status = capturedError?.StatusCode ?? 0;
+            bool isServerError = status >= 500;
+
+            if (!isServerError || attempts >= maxAttempts)
+            {
+                HandleDataFetchError("level-progress", capturedError ?? new BackendError(0, "Unknown level-progress error", string.Empty));
+                LevelManager.ClearCachedBackendProgress();
+                yield break;
+            }
+
+            yield return new WaitForSecondsRealtime(2f);
+        }
+    }
+
+    private void SyncLevelProgressFromStats(PlayerStatsState stats)
+    {
+        if (stats == null)
+            return;
+
+        int lastLevel = Mathf.Clamp(stats.LastLevelReached, LevelManager.FirstGameplayLevelBuildIndex - 1, LevelManager.LastGameplayLevelBuildIndex);
+        if (lastLevel < LevelManager.FirstGameplayLevelBuildIndex)
+            return;
+
+        int currentLocal = LevelManager.GetLastCompletedLevel();
+        if (lastLevel > currentLocal)
+            LevelManager.SaveLevelProgressToLocal(lastLevel);
+    }
+
     private void EnsurePlayerDataController()
     {
         if (PlayerDataController.Instance != null)
@@ -632,6 +814,7 @@ public class LoginManager : MonoBehaviour
         EmitFlowDiagnostic("Offline mode enabled. Backend calls will be skipped.");
         var offlineUserId = ResolveOfflineUserId();
         currentSession = new AuthSession(offlineUserId, string.Empty, "Guest", AuthProvider.GUEST);
+        LevelManager.SetActiveProgressUser(currentSession.UserId);
     }
 
     private string ResolveOfflineUserId()

@@ -9,7 +9,8 @@ public class LevelCanvasManager : MonoBehaviour
     [SerializeField] private GameObject pausePanel;
     [SerializeField] private GameObject settingsPanel;
     [SerializeField] private int mainMenuBuildIndex = 0;
-    [SerializeField] private int lastGameplayLevelBuildIndex = 5;
+    [SerializeField] private int firstGameplayLevelBuildIndex = LevelManager.FirstGameplayLevelBuildIndex;
+    [SerializeField] private int lastGameplayLevelBuildIndex = LevelManager.LastGameplayLevelBuildIndex;
 
     private GameOverHandler handler;
 
@@ -56,7 +57,18 @@ public class LevelCanvasManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         Scene current = SceneManager.GetActiveScene();
-        SceneManager.LoadScene(current.buildIndex);
+        var manager = LevelManager.Instance;
+        if (manager != null)
+        {
+            var levelNumber = manager.CurrentLevelProgress != null
+                ? manager.CurrentLevelProgress.LevelNumber
+                : current.buildIndex;
+            manager.LoadLevel(current.buildIndex, levelNumber);
+        }
+        else
+        {
+            SceneManager.LoadScene(current.buildIndex);
+        }
     }
 
     public void LoadNextLevel()
@@ -64,16 +76,28 @@ public class LevelCanvasManager : MonoBehaviour
         Time.timeScale = 1f;
         Scene current = SceneManager.GetActiveScene();
         int nextIndex = current.buildIndex + 1;
+        int nextLevelNumber = LevelManager.Instance?.CurrentLevelProgress != null
+            ? LevelManager.Instance.CurrentLevelProgress.LevelNumber + 1
+            : nextIndex;
+
         if (current.buildIndex >= lastGameplayLevelBuildIndex)
         {
-            SceneManager.LoadScene(mainMenuBuildIndex);
-            GameManager.Instance.ChangeState(GameManager.GameState.Menu);
-            return;
+            LevelManager.ResetProgress();
+            nextIndex = Mathf.Max(firstGameplayLevelBuildIndex, 1);
+            nextLevelNumber = LevelManager.FirstGameplayLevelBuildIndex;
         }
 
         if (nextIndex >= SceneManager.sceneCountInBuildSettings)
-            nextIndex = mainMenuBuildIndex;
-        SceneManager.LoadScene(nextIndex);
+        {
+            nextIndex = Mathf.Max(firstGameplayLevelBuildIndex, 1);
+            nextLevelNumber = Mathf.Max(LevelManager.FirstGameplayLevelBuildIndex, 1);
+        }
+
+        var manager = LevelManager.Instance;
+        if (manager != null)
+            manager.LoadLevel(nextIndex, nextLevelNumber);
+        else
+            SceneManager.LoadScene(nextIndex);
     }
 
     public void ResumeTime()

@@ -9546,7 +9546,8 @@ MonoBehaviour:
   pausePanel: {fileID: 1456940370131704938}
   settingsPanel: {fileID: 850837439173301472}
   mainMenuBuildIndex: 0
-  lastGameplayLevelBuildIndex: 5
+  firstGameplayLevelBuildIndex: 1
+  lastGameplayLevelBuildIndex: 10
 --- !u!1 &6342018104040594640
 GameObject:
   m_ObjectHideFlags: 0

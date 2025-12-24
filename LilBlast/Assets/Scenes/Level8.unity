@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1001 &3910986236393822480
+--- !u!1001 &1339915300
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -127,14 +127,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1750789385078924337, guid: c0fc01e57a62d4c6f89b2ba90c60d520, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1763962907905428631, guid: c0fc01e57a62d4c6f89b2ba90c60d520, type: 3}
       propertyPath: m_Name
       value: Level
       objectReference: {fileID: 0}
+    - target: {fileID: 2729317037650110075, guid: c0fc01e57a62d4c6f89b2ba90c60d520, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -6652212093537546541, guid: 857010ae628a8463284e367dd0236656, type: 3}
+    - target: {fileID: 3027868564598365887, guid: c0fc01e57a62d4c6f89b2ba90c60d520, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -7785128759560947435, guid: 0d635c4aad05d40c6ab0ee2fadf400a7, type: 3}
     - target: {fileID: 4072707675863047828, guid: c0fc01e57a62d4c6f89b2ba90c60d520, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -184,4 +188,4 @@ PrefabInstance:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 3910986236393822480}
+  - {fileID: 1339915300}

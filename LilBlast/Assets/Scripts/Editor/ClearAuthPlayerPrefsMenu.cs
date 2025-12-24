@@ -10,11 +10,16 @@ public static class ClearAuthPlayerPrefsMenu
     [MenuItem("Tools/Auth/Clear Auth PlayerPrefs")] 
     public static void ClearAuthPrefs()
     {
+        // Ensure progress, inventory, and stats are wiped before clearing auth IDs.
+        LevelManager.ResetProgress();
+
         PlayerPrefs.DeleteKey("LilGames.AuthToken");
         PlayerPrefs.DeleteKey("LilGames.UserId");
         PlayerPrefs.DeleteKey("LilGames.AuthProvider");
         PlayerPrefs.DeleteKey("LilGames.Username");
+
         PlayerPrefs.Save();
+        Debug.Log("[Tools/Auth] Cleared auth prefs plus local progress and inventory.");
     }
 }
 #endif
